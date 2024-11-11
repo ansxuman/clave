@@ -1,13 +1,16 @@
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-import tailwindcss from 'tailwindcss'
-import autoprefixer from 'autoprefixer'
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 
 export default defineConfig({
-  plugins: [svelte()],
-  css: {
-    postcss: {
-      plugins: [tailwindcss, autoprefixer],
+    server: {
+        fs: {
+          allow: [
+            // search up for workspace root
+            searchForWorkspaceRoot(process.cwd()),
+            // your custom rules
+            './bindings/*',
+          ],
+        },
     },
-  },
-})
+	plugins: [sveltekit()]
+});

@@ -6,7 +6,7 @@
         <key>CFBundleName</key>
         <string>My Product</string>
         <key>CFBundleExecutable</key>
-        <string>Clave</string>
+        <string>clave</string>
         <key>CFBundleIdentifier</key>
         <string>com.wails.clave</string>
         <key>CFBundleVersion</key>
