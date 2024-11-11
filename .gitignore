@@ -1,15 +1,17 @@
 # Wails
-build/bin
 frontend/dist
 .task
 bin
 
 # Svelte
-/node_modules/
-/public/build/
+frontend/node_modules/
+frontend/public/build/
+frontend/.svelte-kit/
+frontend/dist/
+
 
 # TailwindCSS
-/public/tailwind.css
+frontend/public/tailwind.css
 
 # Logs
 logs
