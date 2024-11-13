@@ -1,6 +1,7 @@
 package main
 
 import (
+	a "clave/assets"
 	"clave/backend"
 	"clave/constants"
 	"embed"
@@ -17,8 +18,8 @@ var assets embed.FS
 func main() {
 	backendApp := backend.NewApp()
 	app := application.New(application.Options{
-		Name:        "Clave",
-		Description: "Secure Authentication at Your Fingertips",
+		Name:        constants.ApplicationName,
+		Description: constants.Description,
 		Services: []application.Service{
 			application.NewService(backendApp, application.ServiceOptions{}),
 		},
@@ -36,11 +37,14 @@ func main() {
 	systemTray := app.NewSystemTray()
 
 	window := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-		Width:         350,
-		Height:        500,
-		Title:         "Clave",
-		Frameless:     true,
-		AlwaysOnTop:   true,
+		Width:     constants.MaxWidth,
+		Height:    constants.MaxHeight,
+		Title:     constants.ApplicationName,
+		Frameless: true,
+		// Always on top is disabled
+		// because its crashing the
+		// application
+		AlwaysOnTop:   false,
 		Hidden:        true,
 		DisableResize: true,
 		Windows: application.WindowsWindow{
@@ -57,7 +61,7 @@ func main() {
 	app.Hide()
 
 	if runtime.GOOS == "darwin" {
-		systemTray.SetTemplateIcon(constants.Icon)
+		systemTray.SetTemplateIcon(a.Icon)
 	}
 
 	myMenu := app.NewMenu()

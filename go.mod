@@ -5,6 +5,7 @@ go 1.22.4
 toolchain go1.23.2
 
 require (
+	github.com/boltdb/bolt v1.3.1
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.7
 )
