@@ -1,24 +1,41 @@
-# Clave
+# **Clave**
 
-Clave is a secure desktop authenticator app that allows you to easily manage and generate time-based one-time passwords (TOTP) for your accounts, with an additional layer of security.
+A **SIMPLE**, **SECURE**, and **FREE** lightweight cross-platform desktop authenticator app packed with powerful features.
 
-## Features
+---
 
-- **Three Easy Ways to Add Profiles**: Manual entry, drag & drop QR code, or import QR code image.
-- **Secure Authentication**: Generates time-based one-time passwords (TOTP) for your accounts.
-- **Multi-Factor Authentication**: Requires PIN or Touch ID (macOS only) to access TOTP codes.
-- **User-Friendly Interface**: Simple and intuitive design for easy navigation.
-- **System Tray Integration**: Easily accessible from the system tray for quick use.
-- **Cross-Platform**: Available for macOS, Windows, and Linux.
+## **Features**
 
-   
-## Donations
+- **Three Easy Ways to Add Profiles**:  
+  Add your accounts effortlessly through manual entry, drag & drop QR codes, or by importing QR code images.
 
-If you find this content useful, please consider donating to support its development and future improvements.
+- **Secure Authentication**:  
+  Generates **time-based one-time passwords (TOTP)** to enhance your account security.
 
-<a href="https://buymeacoffee.com/ansxuman" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+- **Multi-Factor Authentication (MFA)**:  
+  Protects access to your TOTP codes with an additional layer of security using a **PIN** or **Touch ID** (macOS only).
 
+- **User-Friendly Interface**:  
+  Designed with simplicity in mind, ensuring an intuitive and hassle-free user experience.
 
-## License
+- **System Tray Integration**:  
+  Quickly access your authenticator from the system tray for seamless usability.
 
-This project is licensed under the [MIT License](LICENSE.txt).
+- **Cross-Platform**:  
+  Available for **macOS**, **Windows**, and **Linux**, making it accessible wherever you go.
+
+---
+
+## **Donations**
+
+If you find Clave helpful, consider supporting its development and future updates. Every contribution helps!  
+
+<a href="https://buymeacoffee.com/ansxuman" target="_blank">
+<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;">
+</a>
+
+---
+
+## **License**
+
+This project is open-source and available under the [MIT License](LICENSE.txt).
