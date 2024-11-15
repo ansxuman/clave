@@ -9,9 +9,6 @@ A **SIMPLE**, **SECURE**, and **FREE** lightweight cross-platform desktop authen
 - **Three Easy Ways to Add Profiles**:  
   Add your accounts effortlessly through manual entry, drag & drop QR codes, or by importing QR code images.
 
-- **Secure Authentication**:  
-  Generates **time-based one-time passwords (TOTP)** to enhance your account security.
-
 - **Multi-Factor Authentication (MFA)**:  
   Protects access to your TOTP codes with an additional layer of security using a **PIN** or **Touch ID** (macOS only).
 
@@ -22,7 +19,11 @@ A **SIMPLE**, **SECURE**, and **FREE** lightweight cross-platform desktop authen
   Quickly access your authenticator from the system tray for seamless usability.
 
 - **Cross-Platform**:  
-  Available for **macOS**, **Windows**, and **Linux**, making it accessible wherever you go.
+  Available for **macOS**, **Windows**, and **Linux** .
+  
+- **Self-Update**:  
+  Stay up-to-date with the latest features and fixes through a built-in **automatic update mechanism**.
+
 
 ---
 
