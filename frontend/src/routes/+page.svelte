@@ -1,27 +1,66 @@
 <script lang="ts">
-    import { fade, scale } from 'svelte/transition';
-    import { onMount } from 'svelte';
-    import { getAppVersion } from '$lib/utils/version';
+    import { fade } from 'svelte/transition';
+    import { onMount, onDestroy } from 'svelte';
+    import { Initialize } from './../../bindings/clave/backend/app';
     import { onboardingStore } from '$lib/stores/onboarding';
     import Intro from '$lib/components/onboarding/Intro.svelte';
     import PinSetup from '$lib/components/auth/PinSetup.svelte';
     import TotpList from '$lib/components/totp/TotpList.svelte';
     import LoadingSpinner from '$lib/components/common/LoadingSpinner.svelte';
     import Footer from '$lib/components/common/Footer.svelte';
+    import * as wails from '@wailsio/runtime';
     
     const title = 'Clave';
     let version = '';
+    let isInitializing = true;
     let showPinSetup = false;
     let setupComplete = false;
+    let needsVerification = false;
 
-    $: isLoading = $onboardingStore.isLoading;
     $: showIntro = $onboardingStore.showIntro;
     $: currentStep = $onboardingStore.currentStep;
     $: introComplete = $onboardingStore.introComplete;
-
+    
     onMount(async () => {
-        version = await getAppVersion();
+        try {
+            InitializeEventListener();
+            const initResult = await Initialize();
+            if (initResult.needsOnboarding) {
+                HandleOnboardingRequired();
+            } else if (initResult.needsVerification) {
+                HandlePinVerify();
+            } else {
+                HandleSetupComplete();
+            }
+        } catch (error) {
+            HandleInitError(error);
+        }
     });
+
+    onDestroy(() => {
+        wails.Events.Off("requirePinVerification");
+        wails.Events.Off("verificationComplete");
+    });
+
+    function HandleOnboardingRequired() {
+        isInitializing = false;
+        onboardingStore.startIntro();
+    }
+
+    function HandlePinVerify() {
+        isInitializing = false;
+        needsVerification = true;
+    }
+
+    function HandleSetupComplete() {
+        isInitializing = false;
+        setupComplete = true;
+    }
+
+    function HandleInitError(error: any) {
+        console.error('Initialization failed:', error);
+        isInitializing = false;
+    }
 
     function handleMainAction() {
         if (introComplete) {
@@ -39,12 +78,46 @@
     function handlePinSetupComplete() {
         setupComplete = true;
     }
+
+    function handlePinVerification() {
+        needsVerification = false;
+        setupComplete = true;
+    }
+
+    function InitializeEventListener() {
+        wails.Events.On("requirePinVerification", () => {
+                needsVerification = true;
+                setupComplete = false;
+            });
+
+            wails.Events.On("verificationComplete", () => {
+                needsVerification = false;
+                setupComplete = true;
+            });
+            wails.Events.On("appVersion", (v: string) => {
+                version = v;
+            });
+    }
 </script>
 
-{#if setupComplete}
+{#if isInitializing}
+    <div class="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+        <LoadingSpinner />
+    </div>
+{:else if setupComplete}
     <TotpList />
+{:else if needsVerification}
+    <div class="flex flex-col items-center justify-between h-screen text-white p-4">
+        <div class="w-full flex-grow flex items-center justify-center">
+            <PinSetup 
+                mode="verify"
+                onComplete={handlePinVerification}
+            />
+        </div>
+        <Footer {version} />
+    </div>
 {:else}
-    <div class="flex flex-col items-center justify-between h-screen text-white p-4 --wails-draggable: drag">
+    <div class="flex flex-col items-center justify-between h-screen text-white p-4">
         <div class="w-full max-w-sm text-center" in:fade={{ duration: 300 }}>
             <h1 class="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                 {title}
@@ -53,19 +126,12 @@
         </div>
         
         <div class="flex-grow flex items-center justify-center w-full">
-            {#if isLoading}
-                <LoadingSpinner />
-            {:else if showPinSetup}
-                <PinSetup onComplete={handlePinSetupComplete} />
-            {:else if !showIntro}
-                <button 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-                    in:scale={{ duration: 300, start: 0.9 }}
-                    on:click={handleMainAction}
-                >
-                    {introComplete ? 'Add New Profile' : 'Get Started'}
-                </button>
-            {:else}
+            {#if showPinSetup}
+                <PinSetup 
+                    mode="setup"
+                    onComplete={handlePinSetupComplete} 
+                />
+            {:else if showIntro}
                 <Intro 
                     currentStep={currentStep} 
                     nextStep={() => {
@@ -77,11 +143,17 @@
                     }}
                     prevStep={onboardingStore.prevStep} 
                 />
+            {:else}
+                <button 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full transition duration-150 ease-in-out"
+                    in:fade={{ duration: 300 }}
+                    on:click={handleMainAction}
+                >
+                    Get Started
+                </button>
             {/if}
         </div>
         
-        {#if !setupComplete}
-            <Footer {version} />
-        {/if}
+        <Footer {version} />
     </div>
 {/if}

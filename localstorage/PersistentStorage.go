@@ -6,187 +6,214 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/gob"
 	"errors"
 	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/boltdb/bolt"
+	"github.com/dgraph-io/badger/v4"
+	"github.com/dgraph-io/badger/v4/options"
+)
+
+var (
+	ErrNotFound = errors.New("storage: key not found")
+	ErrBadValue = errors.New("storage: bad value")
+
+	storageSync sync.Once
+	instance    *PersistentStore
 )
 
 type PersistentStore struct {
-	db *bolt.DB
+	db *badger.DB
 }
-
-var (
-	ErrNotFound = errors.New("skv: key not found")
-
-	ErrBadValue = errors.New("skv: bad value")
-
-	bucketName = []byte("kv")
-
-	persistentStorageSync sync.Once
-	persistentInstance    *PersistentStore
-)
 
 func GetPersistentStorage() *PersistentStore {
-	log.Println("Get Persistent Storage")
-	persistentStorageSync.Do(func() {
-		opts := &bolt.Options{
-			Timeout: 50 * time.Millisecond,
+	storageSync.Do(func() {
+
+		dbPath := constants.SecureVaultDB
+		if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+			log.Printf("[Storage] Failed to create database directory: %v", err)
+			panic(err)
 		}
-		if db, err := bolt.Open(constants.SecureVaultDB, 0640, opts); err != nil {
+		key := sha256.Sum256([]byte(constants.CommonDatabasePassword))
+		opts := badger.DefaultOptions(dbPath).
+			WithLogger(nil).
+			WithCompression(options.ZSTD).
+			WithEncryptionKey(key[:]).
+			WithIndexCacheSize(100 << 20)
 
-			if err != nil {
-				log.Println("[GetPersistentStorage][Error] " + err.Error())
-			}
-
-			return
-		} else {
-			err := db.Update(func(tx *bolt.Tx) error {
-				_, err := tx.CreateBucketIfNotExists(bucketName)
-
-				if err != nil {
-					log.Println("[GetPersistentStorage][Error] " + err.Error())
-				}
-
-				return err
-			})
-			if err != nil {
-				log.Println("[GetPersistentStorage][Error] " + err.Error())
-				return
-			} else {
-				persistentInstance = &PersistentStore{db: db}
-			}
+		db, err := badger.Open(opts)
+		if err != nil {
+			log.Printf("[Storage] Failed to open DB: %v", err)
+			panic(err)
 		}
 
+		instance = &PersistentStore{db: db}
+		go instance.runGC()
 	})
 
-	return persistentInstance
+	if instance == nil {
+		panic("Failed to initialize storage")
+	}
 
+	return instance
 }
 
-func (kvs *PersistentStore) SetValue(key string, value interface{}) error {
+func (ps *PersistentStore) SetValue(key string, value interface{}) error {
 	if value == nil {
 		return ErrBadValue
 	}
 
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(value); err != nil {
-		log.Println("[Put][Encode][Error] ", err)
 		return err
 	}
 
-	text := buf.Bytes()
-	password := []byte(constants.CommonDatabasePassword)
-
-	// generate a new aes cipher using our 32 byte long password
-	c, err := aes.NewCipher(password)
-	// if there are any errors, handle them
+	encrypted, err := ps.encrypt(buf.Bytes())
 	if err != nil {
-		log.Println("[Put][Cipher][Error] " + err.Error())
 		return err
 	}
 
-	// gcm or Galois/Counter Mode, is a mode of operation
-	// for symmetric password cryptographic block ciphers
-	// - https://en.wikipedia.org/wiki/Galois/Counter_Mode
-	gcm, err := cipher.NewGCM(c)
-	// if any error generating new GCM
-	// handle them
-	if err != nil {
-		log.Println("[Put][GCM][Error] " + err.Error())
-		return err
-	}
-
-	// creates a new byte array the size of the nonce
-	// which must be passed to Seal
-	nonce := make([]byte, gcm.NonceSize())
-	// populates our nonce with a cryptographically secure
-	// random sequence
-	if numberOfBytesRead, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		log.Println("[Put][Encrypt][Error] " + err.Error())
-		return err
-	} else {
-
-		log.Println("[Encrypt] Read this many bytes --> ", numberOfBytesRead)
-	}
-
-	encryptedData := gcm.Seal(nonce, nonce, text, nil)
-
-	return kvs.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket(bucketName).Put([]byte(key), encryptedData)
+	return ps.db.Update(func(txn *badger.Txn) error {
+		return txn.Set([]byte(key), encrypted)
 	})
 }
 
-func (kvs *PersistentStore) Get(key string, value interface{}) error {
-	log.Println("Get : ", key)
-	return kvs.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(bucketName).Cursor()
-		if k, v := c.Seek([]byte(key)); k == nil || string(k) != key {
+func (ps *PersistentStore) Get(key string, value interface{}) error {
+	if value == nil {
+		return ErrBadValue
+	}
+
+	var data []byte
+	err := ps.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(key))
+		if err == badger.ErrKeyNotFound {
 			return ErrNotFound
-		} else if value == nil {
+		}
+		if err != nil {
+			return err
+		}
+
+		return item.Value(func(val []byte) error {
+			data = append([]byte{}, val...)
 			return nil
-		} else {
+		})
+	})
+	if err != nil {
+		return err
+	}
 
-			// Get the value, decrypt and send back
+	decrypted, err := ps.decrypt(data)
+	if err != nil {
+		return err
+	}
 
-			key := []byte(constants.CommonDatabasePassword)
-			ciphertext := v
+	return gob.NewDecoder(bytes.NewReader(decrypted)).Decode(value)
+}
 
-			c, err := aes.NewCipher(key)
-			if err != nil {
-				log.Println("[Decrypt][Error] ", err)
-				return err
-			}
-
-			gcm, err := cipher.NewGCM(c)
-			if err != nil {
-				log.Println("[Decrypt][Error] ", err)
-				return err
-			}
-
-			nonceSize := gcm.NonceSize()
-			if len(ciphertext) < nonceSize {
-				log.Println("[Decrypt][Error] ", err)
-				// return err
-			}
-
-			nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-			decryptedData, err := gcm.Open(nil, nonce, ciphertext, nil)
-			if err != nil {
-				log.Println("[Decrypt][Error] ", err)
-				return err
-			}
-
-			d := gob.NewDecoder(bytes.NewReader(decryptedData))
-
-			return d.Decode(value)
-
-		}
+func (ps *PersistentStore) DeleteKey(key string) error {
+	return ps.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete([]byte(key))
 	})
 }
 
-// Delete the entry with the given key. If no such key is present in the store,
-// it returns ErrNotFound.
-//
-//	store.Delete("key42")
-func (kvs *PersistentStore) DeleteKey(key string) error {
-	log.Println("Delete Key : ", key)
-	return kvs.db.Update(func(tx *bolt.Tx) error {
-		c := tx.Bucket(bucketName).Cursor()
-		if k, _ := c.Seek([]byte(key)); k == nil || string(k) != key {
-			return ErrNotFound
-		} else {
-			return c.Delete()
-		}
-	})
+func (ps *PersistentStore) Close() error {
+	if ps.db != nil {
+		return ps.db.Close()
+	}
+	return nil
 }
 
-// Close closes the key-value store file.
-func (kvs *PersistentStore) Close() error {
-	log.Println("Closing PersistentStore")
-	return kvs.db.Close()
+func (ps *PersistentStore) encrypt(data []byte) ([]byte, error) {
+	// Hash the password to get a consistent 32-byte key
+	key := sha256.Sum256([]byte(constants.CommonDatabasePassword))
+
+	c, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+
+	return gcm.Seal(nonce, nonce, data, nil), nil
+}
+
+func (ps *PersistentStore) decrypt(data []byte) ([]byte, error) {
+	// Hash the password to get a consistent 32-byte key
+	key := sha256.Sum256([]byte(constants.CommonDatabasePassword))
+
+	c, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		return nil, err
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(data) < nonceSize {
+		return nil, errors.New("malformed data")
+	}
+
+	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+	return gcm.Open(nil, nonce, ciphertext, nil)
+}
+
+func (ps *PersistentStore) IsHealthy() bool {
+	if ps.db == nil {
+		return false
+	}
+
+	err := ps.db.View(func(txn *badger.Txn) error {
+		_, err := txn.Get([]byte("health_check"))
+		if err == badger.ErrKeyNotFound {
+			return nil
+		}
+		return err
+	})
+
+	return err == nil
+}
+
+func (ps *PersistentStore) runGC() {
+	ticker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[Storage] GC panic recovered: %v", r)
+				}
+			}()
+
+			err := ps.db.RunValueLogGC(0.5)
+			if err != nil && err != badger.ErrNoRewrite {
+				log.Printf("[Storage] GC error: %v", err)
+			}
+		}()
+	}
+}
+
+func (ps *PersistentStore) HasKey(key string) bool {
+	err := ps.db.View(func(txn *badger.Txn) error {
+		_, err := txn.Get([]byte(key))
+		return err
+	})
+	return err == nil
 }

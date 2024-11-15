@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed frontend/dist
@@ -44,9 +45,10 @@ func main() {
 		// Always on top is disabled
 		// because its crashing the
 		// application
-		AlwaysOnTop:   false,
-		Hidden:        true,
-		DisableResize: true,
+		AlwaysOnTop:     false,
+		Hidden:          true,
+		DisableResize:   true,
+		DevToolsEnabled: true,
 		Windows: application.WindowsWindow{
 			HiddenOnTaskbar: true,
 		},
@@ -56,6 +58,12 @@ func main() {
 			TitleBar:                application.MacTitleBarHiddenInset,
 			Appearance:              application.NSAppearanceNameAccessibilityHighContrastVibrantLight,
 		},
+	})
+
+	backendApp.SetWindow(window)
+
+	app.OnApplicationEvent(events.Common.ApplicationStarted, func(event *application.ApplicationEvent) {
+		log.Println("Application started, initializing security...")
 	})
 
 	app.Hide()
@@ -72,7 +80,7 @@ func main() {
 	})
 
 	myMenu.AddSeparator()
-	myMenu.Add("Quit").OnClick(func(ctx *application.Context) {
+	myMenu.Add("Quit Clave").OnClick(func(ctx *application.Context) {
 		q := application.QuestionDialog().
 			SetTitle("Quit Clave").
 			SetMessage("Are you sure you want to quit?")

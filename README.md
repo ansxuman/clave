@@ -19,12 +19,29 @@ Clave is a secure desktop authenticator app that allows you to easily manage and
 - [Svelte](https://svelte.dev/): Frontend framework
 - [Tailwind CSS](https://tailwindcss.com/): Styling
 
+## Roadmap
+
+- [ ] Intro
+- [ ] App Icon
+- [ ] Local DB
+- [ ] Setup and Verify PIN
+- [ ] Touch ID Integration (macOS only)
+- [ ] Add Profile via QR Code
+- [ ] Add Profile Manually
+- [ ] Add Profile via Drag & Drop
+- [ ] Git Actions CI/CD Pipeline
+- [ ] Support for Windows
+- [ ] Support for Linux
+- [ ] Profile Backup/Restore
+- [ ] Self Update
+
+## Donations
+
+If you find this content useful, please consider donating to support its development and future improvements.
+
+<a href="https://buymeacoffee.com/ansxuman" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE.txt).
-
-## Acknowledgements
-
-- [Wails](https://wails.io/) for the application framework.
-- [Inter](https://github.com/rsms/inter) for the font used in the application.

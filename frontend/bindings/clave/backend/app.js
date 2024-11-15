@@ -6,10 +6,77 @@
 // @ts-ignore: Unused imports
 import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as application$0 from "../../github.com/wailsapp/wails/v3/pkg/application/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 /**
- * @returns {Promise<string> & { cancel(): void }}
+ * @returns {Promise<boolean> & { cancel(): void }}
  */
-export function GetAppVersion() {
-    let $resultPromise = /** @type {any} */($Call.ByID(1288659937));
+export function HasPin() {
+    let $resultPromise = /** @type {any} */($Call.ByID(2064516343));
     return $resultPromise;
 }
+
+/**
+ * @returns {Promise<$models.InitResult> & { cancel(): void }}
+ */
+export function Initialize() {
+    let $resultPromise = /** @type {any} */($Call.ByID(1738565190));
+    let $typingPromise = /** @type {any} */($resultPromise.then(($result) => {
+        return $$createType0($result);
+    }));
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
+}
+
+/**
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
+export function IsVerified() {
+    let $resultPromise = /** @type {any} */($Call.ByID(2657582620));
+    return $resultPromise;
+}
+
+/**
+ * @param {boolean} state
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function SetVerified(state) {
+    let $resultPromise = /** @type {any} */($Call.ByID(734155620, state));
+    return $resultPromise;
+}
+
+/**
+ * @param {application$0.WebviewWindow | null} window
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function SetWindow(window) {
+    let $resultPromise = /** @type {any} */($Call.ByID(64129708, window));
+    return $resultPromise;
+}
+
+/**
+ * @param {string} pin
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function SetupPin(pin) {
+    let $resultPromise = /** @type {any} */($Call.ByID(2893959452, pin));
+    return $resultPromise;
+}
+
+/**
+ * @param {string} pin
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
+export function VerifyPin(pin) {
+    let $resultPromise = /** @type {any} */($Call.ByID(90512156, pin));
+    return $resultPromise;
+}
+
+// Private type creation functions
+const $$createType0 = $models.InitResult.createFrom;
