@@ -12,13 +12,6 @@ Clave is a secure desktop authenticator app that allows you to easily manage and
 - **Cross-Platform**: Available for macOS, Windows, and Linux.
 
    
-## Technology Stack
-
-- [Wails](https://wails.io/): Application framework
-- [Go](https://golang.org/): Client-side Backend language
-- [Svelte](https://svelte.dev/): Frontend framework
-- [Tailwind CSS](https://tailwindcss.com/): Styling
-
 ## Donations
 
 If you find this content useful, please consider donating to support its development and future improvements.
