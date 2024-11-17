@@ -1,9 +1,5 @@
 package constants
 
-const WindowRatio = 1.5
-
-// var width, height int
-
 var AgentName = "Clave"
 var Description = "Secure Authentication at Your Fingertips"
 var Company = "© 2024 Clave. Licensed under MIT License."

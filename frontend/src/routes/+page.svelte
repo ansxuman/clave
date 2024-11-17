@@ -1,13 +1,13 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
     import { onMount, onDestroy } from 'svelte';
-    import { Initialize } from './../../bindings/clave/backend/app';
+    import { Initialize, GetAppVersion } from './../../bindings/clave/backend/app';
     import { onboardingStore } from '$lib/stores/onboarding';
-    import Intro from '$lib/components/onboarding/Intro.svelte';
+    import Intro from '$lib/components/intro/Intro.svelte';
     import PinSetup from '$lib/components/auth/PinSetup.svelte';
     import TotpList from '$lib/components/totp/TotpList.svelte';
-    import LoadingSpinner from '$lib/components/common/LoadingSpinner.svelte';
-    import Footer from '$lib/components/common/Footer.svelte';
+    import LoadingSpinner from '$lib/components/intro/LoadingSpinner.svelte';
+    import Footer from '$lib/components/intro/Footer.svelte';
     import * as wails from '@wailsio/runtime';
     
     const title = 'Clave';
@@ -23,6 +23,7 @@
     
     onMount(async () => {
         try {
+            version = await GetAppVersion();
             InitializeEventListener();
             const initResult = await Initialize();
             if (initResult.needsOnboarding) {
@@ -93,9 +94,6 @@
             wails.Events.On("verificationComplete", () => {
                 needsVerification = false;
                 setupComplete = true;
-            });
-            wails.Events.On("appVersion", (v: string) => {
-                version = v;
             });
     }
 </script>
