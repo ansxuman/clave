@@ -1,6 +1,8 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { fade, slide } from 'svelte/transition';
     import { MoreVertical, Plus } from 'lucide-svelte';
+    import * as wails from '@wailsio/runtime';
     
     let showMenu = false;
     let showAddOptions = false;
@@ -16,6 +18,15 @@
         { label: 'Scan QR Code', action: () => console.log('Scan QR') },
         { label: 'Import from File', action: () => console.log('Import') }
     ];
+
+    onMount(() => {
+        const w = wails.Window;
+        w.Show();
+        if (!w.IsFocused()) {
+            w.Focus();
+            w.SetAlwaysOnTop(true);
+        }
+    });
 </script>
 <div class="relative h-screen">
 

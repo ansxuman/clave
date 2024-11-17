@@ -130,7 +130,6 @@ func (ps *PersistentStore) Close() error {
 }
 
 func (ps *PersistentStore) encrypt(data []byte) ([]byte, error) {
-	// Hash the password to get a consistent 32-byte key
 	key := sha256.Sum256([]byte(constants.CommonDatabasePassword))
 
 	c, err := aes.NewCipher(key[:])
@@ -152,7 +151,6 @@ func (ps *PersistentStore) encrypt(data []byte) ([]byte, error) {
 }
 
 func (ps *PersistentStore) decrypt(data []byte) ([]byte, error) {
-	// Hash the password to get a consistent 32-byte key
 	key := sha256.Sum256([]byte(constants.CommonDatabasePassword))
 
 	c, err := aes.NewCipher(key[:])

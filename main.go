@@ -13,7 +13,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
-//go:embed frontend/dist
+//go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
@@ -45,10 +45,10 @@ func main() {
 		// Always on top is disabled
 		// because its crashing the
 		// application
-		AlwaysOnTop:     false,
+		// AlwaysOnTop:       true,
 		Hidden:          true,
 		DisableResize:   true,
-		DevToolsEnabled: true,
+		DevToolsEnabled: false,
 		Windows: application.WindowsWindow{
 			HiddenOnTaskbar: true,
 		},
@@ -92,7 +92,6 @@ func main() {
 		q.AddButton("No").SetAsDefault().OnClick(func() {
 		})
 
-		q.Show()
 	})
 
 	systemTray.SetMenu(myMenu)

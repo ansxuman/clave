@@ -8,11 +8,18 @@ import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as application$0 from "../../github.com/wailsapp/wails/v3/pkg/application/models.js";
-
+import * as objects$0 from "../objects/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as $models from "./models.js";
+import * as application$0 from "../../github.com/wailsapp/wails/v3/pkg/application/models.js";
+
+/**
+ * @returns {Promise<string> & { cancel(): void }}
+ */
+export function GetAppVersion() {
+    let $resultPromise = /** @type {any} */($Call.ByID(1288659937));
+    return $resultPromise;
+}
 
 /**
  * @returns {Promise<boolean> & { cancel(): void }}
@@ -23,7 +30,7 @@ export function HasPin() {
 }
 
 /**
- * @returns {Promise<$models.InitResult> & { cancel(): void }}
+ * @returns {Promise<objects$0.InitResult> & { cancel(): void }}
  */
 export function Initialize() {
     let $resultPromise = /** @type {any} */($Call.ByID(1738565190));
@@ -32,6 +39,14 @@ export function Initialize() {
     }));
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
+}
+
+/**
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
+export function IsMacOS() {
+    let $resultPromise = /** @type {any} */($Call.ByID(2874596637));
+    return $resultPromise;
 }
 
 /**
@@ -78,5 +93,13 @@ export function VerifyPin(pin) {
     return $resultPromise;
 }
 
+/**
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
+export function VerifyTouchID() {
+    let $resultPromise = /** @type {any} */($Call.ByID(2099673405));
+    return $resultPromise;
+}
+
 // Private type creation functions
-const $$createType0 = $models.InitResult.createFrom;
+const $$createType0 = objects$0.InitResult.createFrom;
