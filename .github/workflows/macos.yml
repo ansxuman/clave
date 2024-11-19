@@ -6,7 +6,9 @@ permissions:
 
 on:
   push:
-    branches: [pipeline]
+    branches:
+      - pipeline
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -76,7 +78,6 @@ jobs:
       - name: Get Merged PR Details
         id: changelog
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           echo "changes=$(gh pr list --repo ${{ github.repository }} --state merged --json title,author --jq '.[].title + \" by @\" + .author.login' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
           echo "contributors=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[].author.login' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
         env:
@@ -120,16 +121,26 @@ jobs:
           mv Clave.zip darwinBinaries/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        id: create-release
+        uses: actions/create-release@v1
         with:
           tag_name: "v${{ github.event.inputs.version }}"
-          name: "Version v${{ github.event.inputs.version }}"
+          release_name: "Version v${{ github.event.inputs.version }}"
           body: |
             ## What's Changed
             ${{ env.changes }}
             ## New Contributors
             ${{ env.contributors }}
           draft: false
-          files: darwinBinaries/Clave.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: darwinBinaries/Clave.zip
+          asset_name: Clave-macos.zip
+          asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
