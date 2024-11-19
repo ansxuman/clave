@@ -60,6 +60,8 @@ func main() {
 		},
 	})
 
+	app.ShowAboutDialog()
+
 	backendApp.SetWindow(window)
 
 	app.OnApplicationEvent(events.Common.ApplicationStarted, func(event *application.ApplicationEvent) {

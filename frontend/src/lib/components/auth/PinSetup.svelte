@@ -37,8 +37,6 @@
     const initialize = async () => {
       isMacOS = await IsMacOS();
       const w = wails.Window;
-      w.Show();
-      w.SetAlwaysOnTop(true);
       w.Focus();
     };
     

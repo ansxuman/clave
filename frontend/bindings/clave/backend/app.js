@@ -44,6 +44,14 @@ export function Initialize() {
 /**
  * @returns {Promise<boolean> & { cancel(): void }}
  */
+export function IsFirstMount() {
+    let $resultPromise = /** @type {any} */($Call.ByID(3776458967));
+    return $resultPromise;
+}
+
+/**
+ * @returns {Promise<boolean> & { cancel(): void }}
+ */
 export function IsMacOS() {
     let $resultPromise = /** @type {any} */($Call.ByID(2874596637));
     return $resultPromise;
@@ -54,6 +62,31 @@ export function IsMacOS() {
  */
 export function IsVerified() {
     let $resultPromise = /** @type {any} */($Call.ByID(2657582620));
+    return $resultPromise;
+}
+
+/**
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function OpenQR() {
+    let $resultPromise = /** @type {any} */($Call.ByID(1582336875));
+    return $resultPromise;
+}
+
+/**
+ * @param {string} profileId
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function RemoveTotpProfile(profileId) {
+    let $resultPromise = /** @type {any} */($Call.ByID(4287256182, profileId));
+    return $resultPromise;
+}
+
+/**
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function SendTOTPData() {
+    let $resultPromise = /** @type {any} */($Call.ByID(3266318903));
     return $resultPromise;
 }
 
