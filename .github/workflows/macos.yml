@@ -38,11 +38,12 @@ jobs:
 
       - name: Install Wails
         run: |
-          git clone https://github.com/wailsapp/wails.git
-          cd wails
-          git checkout v3-alpha
-          cd v3/cmd/wails3
-          go install
+          go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
+          # git clone https://github.com/wailsapp/wails.git
+          # cd wails
+          # git checkout v3-alpha
+          # cd v3/cmd/wails3
+          # go install
 
       - name: Install Dependencies
         run: npm install
@@ -85,11 +86,12 @@ jobs:
 
       - name: Install Wails
         run: |
-          git clone https://github.com/wailsapp/wails.git
-          cd wails
-          git checkout v3-alpha
-          cd v3/cmd/wails3
-          go install
+          go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
+          # git clone https://github.com/wailsapp/wails.git
+          # cd wails
+          # git checkout v3-alpha
+          # cd v3/cmd/wails3
+          # go install
 
       - name: Build Release Binaries
         run: |
