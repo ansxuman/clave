@@ -36,14 +36,23 @@ jobs:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Wails
+      - name: Setup Wails Dependencies
         run: |
-          go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
-          # git clone https://github.com/wailsapp/wails.git
-          # cd wails
-          # git checkout v3-alpha
-          # cd v3/cmd/wails3
-          # go install
+          mkdir -p ../github
+          cd ../github
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+          cd ../../../..
+          pwd
+          ls -la
+
+      - name: Update go.mod
+        run: |
+          sed -i '' 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          cat go.mod
 
       - name: Install Dependencies
         run: npm install
@@ -84,14 +93,23 @@ jobs:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Wails
+      - name: Setup Wails Dependencies
         run: |
-          go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
-          # git clone https://github.com/wailsapp/wails.git
-          # cd wails
-          # git checkout v3-alpha
-          # cd v3/cmd/wails3
-          # go install
+          mkdir -p ../github
+          cd ../github
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+          cd ../../../..
+          pwd
+          ls -la
+
+      - name: Update go.mod
+        run: |
+          sed -i '' 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          cat go.mod
 
       - name: Build Release Binaries
         run: |
