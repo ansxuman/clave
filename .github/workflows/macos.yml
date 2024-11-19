@@ -1,0 +1,115 @@
+name: CI/CD Workflow
+
+permissions:
+  contents: write
+  pull-requests: read
+
+on:
+  push:
+    branches: [pipeline]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for the release (e.g., 1.1.0)'
+        required: true
+
+jobs:
+  build:
+    name: Build and Test on Push
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install Wails
+        run: |
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: wails3 build
+
+  release:
+    name: Create Release
+    runs-on: macos-latest
+    needs: [build]
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Get Merged PR Details
+        id: changelog
+        run: |
+          echo "changes=$(gh pr list --repo ${{ github.repository }} --state merged --json title,author --jq '.[].title + \" by @\" + .author.login' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
+          echo "contributors=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[].author.login' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install Wails
+        run: |
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+
+      - name: Build Release Binaries
+        run: |
+          mkdir -p darwinBinaries
+          wails3 package
+          zip -r Clave.zip bin/Clave.app
+          mv Clave.zip darwinBinaries/
+
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        with:
+          tag_name: "v${{ github.event.inputs.version }}"
+          release_name: "Version v${{ github.event.inputs.version }}"
+          body: |
+            ## What's Changed
+            ${{ env.changes }}
+            ## New Contributors
+            ${{ env.contributors }}
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: darwinBinaries/Clave.zip
+          asset_name: Clave-macos.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
