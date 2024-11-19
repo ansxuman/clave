@@ -117,8 +117,10 @@
 {:else}
     <div class="flex flex-col items-center justify-between h-screen text-white p-4">
         <div class="w-full max-w-sm text-center" in:fade={{ duration: 300 }}>
-            <h1 class="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                {title}
+            <h1 class="text-4xl font-bold mb-2">
+                <span class="animate-gradient bg-clip-text text-transparent bg-[length:200%_100%] bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400">
+                    {title}
+                </span>
             </h1>
             <p class="text-xs text-gray-400 mb-4">Effortless Security, One Tap Away</p>
         </div>
@@ -155,3 +157,22 @@
         <Footer {version} />
     </div>
 {/if}
+
+<style>
+    @keyframes gradient-flow {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .animate-gradient {
+        animation: gradient-flow 2s ease infinite;
+        background-size: 200% auto;
+    }
+</style>

@@ -1,16 +1,20 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
+import path from 'path';
 
 export default defineConfig({
-    server: {
-        fs: {
+  server: {
+      fs: {
           allow: [
-            // search up for workspace root
-            searchForWorkspaceRoot(process.cwd()),
-            // your custom rules
-            './bindings/*',
-          ],
-        },
-    },
-	plugins: [sveltekit()]
+              searchForWorkspaceRoot(process.cwd()),
+              './bindings/*'
+          ]
+      }
+  },
+  resolve: {
+      alias: {
+          '@clave/backend': path.resolve('./bindings/clave/backend/app'),
+      }
+  },
+  plugins: [sveltekit()]
 });

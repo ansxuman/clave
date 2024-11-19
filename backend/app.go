@@ -5,6 +5,7 @@ import (
 	"clave/localstorage"
 	"clave/objects"
 	"clave/services/auth"
+	"clave/services/totp"
 	"clave/services/window"
 	"runtime"
 
@@ -15,20 +16,25 @@ import (
 type App struct {
 	cancel      cmap.ConcurrentMap[string, func()]
 	authService *auth.Service
+	totpService *totp.Service
 	winManager  *window.Manager
 	isVerified  bool
 	isMacOS     bool
+	firstMount  bool
 }
 
 func NewApp() *App {
 	storage := localstorage.GetPersistentStorage()
 	authService := auth.NewService(storage)
+	totpService := totp.NewService(storage)
 
 	app := &App{
 		cancel:      cmap.New[func()](),
 		authService: authService,
+		totpService: totpService,
 		isVerified:  false,
 		isMacOS:     runtime.GOOS == "darwin",
+		firstMount:  true,
 	}
 
 	app.winManager = window.NewManager(app)
@@ -56,8 +62,10 @@ func (a *App) Initialize() objects.InitResult {
 
 func (a *App) SetWindow(window *application.WebviewWindow) {
 	a.winManager.SetWindow(window)
+	if a.totpService != nil {
+		a.totpService.SetWindow(window)
+	}
 }
-
 func (a *App) SetupPin(pin string) error {
 	return a.authService.SetupPin(pin)
 }
@@ -80,4 +88,30 @@ func (a *App) VerifyTouchID() bool {
 
 func (a *App) GetAppVersion() string {
 	return constants.AppVersion
+}
+
+func (a *App) IsFirstMount() bool {
+	if a.firstMount {
+		a.firstMount = false
+		return true
+	}
+	return false
+}
+
+func (a *App) OpenQR() error {
+	return a.totpService.OpenQR()
+}
+
+func (a *App) SendTOTPData() {
+	if a.totpService == nil {
+		return
+	}
+	a.totpService.SendTOTPData()
+}
+
+func (a *App) RemoveTotpProfile(profileId string) error {
+	if a.totpService == nil {
+		return nil
+	}
+	return a.totpService.RemoveTotpProfile(profileId)
 }
