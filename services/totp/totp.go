@@ -3,12 +3,14 @@ package totp
 import (
 	"bytes"
 	"clave/objects"
+	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/liyue201/goqr"
@@ -89,12 +91,32 @@ func (s *Service) configureQRProfile(qrData []uint8) error {
 	parsedURL, err := url.Parse(string(qrData))
 	if err != nil {
 		log.Printf("[TOTP] Failed to parse QR data: %v", err)
+		s.window.EmitEvent("failedToScanQR", "Invalid QR code format")
 		return err
 	}
 
+	if parsedURL.Scheme != "otpauth" || parsedURL.Host != "totp" {
+		s.window.EmitEvent("failedToScanQR", "Invalid TOTP URI format")
+		return fmt.Errorf("invalid URI format")
+	}
+
 	secret := parsedURL.Query().Get("secret")
+	if secret == "" {
+		s.window.EmitEvent("failedToScanQR", "Missing secret parameter")
+		return fmt.Errorf("missing secret")
+	}
+	base32Regex := regexp.MustCompile(`^[A-Z2-7]+=*$`)
+	if !base32Regex.MatchString(secret) {
+		s.window.EmitEvent("failedToScanQR", "Invalid secret format")
+		return fmt.Errorf("invalid secret format")
+	}
+
 	path := strings.TrimPrefix(parsedURL.Path, "/")
 	issuer := strings.TrimSuffix(path, "/")
+	if issuer == "" {
+		s.window.EmitEvent("failedToScanQR", "Missing issuer")
+		return fmt.Errorf("missing issuer")
+	}
 
 	exists, profile := s.storage.CheckIfIssuerOrSecretExists(issuer, secret)
 	if exists {
