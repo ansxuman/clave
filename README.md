@@ -27,10 +27,6 @@
 
 - **Cross-Platform**:  
   Available for **macOS**, **Windows**, and **Linux** .
-  
-- **Self-Update**:  
-  Stay up-to-date with the latest features and fixes through a built-in **automatic update mechanism**.
-
 
 ---
 
