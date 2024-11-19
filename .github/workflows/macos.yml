@@ -30,6 +30,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Wails
         run: |
@@ -57,7 +62,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: 'npm'
 
       - name: Get Merged PR Details
         id: changelog
@@ -72,6 +76,12 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+        
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Wails
         run: |
