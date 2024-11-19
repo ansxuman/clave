@@ -1,8 +1,15 @@
-# **Clave**
+<div align="center">
+ <img src="build/appicon.png" alt="NeoHtop Logo" width="120" />
+  <h1>Clave</h1>
+  <p>A SIMPLE, SECURE, and FREE lightweight cross-platform desktop authenticator app packed with powerful features.</p>
 
-A **SIMPLE**, **SECURE**, and **FREE** lightweight cross-platform desktop authenticator app packed with powerful features.
+[![License](https://img.shields.io/github/license/ansxuman/clave)](https://github.com/ansxuman/clave/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/ansxuman/clave)](https://github.com/ansxuman/clave/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/ansxuman/clave)](https://github.com/ansxuman/clave/issues)
+[![GitHub release](https://img.shields.io/github/v/release/ansxuman/clave)](https://github.com/ansxuman/clave/releases)
+[![Notarized by Apple](https://img.shields.io/badge/Release_Notarized_by_Apple-000000?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 
----
+</div>
 
 ## **Features**
 
