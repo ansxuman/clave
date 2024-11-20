@@ -26,8 +26,35 @@ jobs:
       - name: Get Merged PR Details
         id: changelog
         run: |
-          echo "changes=$(gh pr list --repo ${{ github.repository }} --state merged --json title,author --jq '.[].title + \" by @\" + .author.login' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
-          echo "contributors=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[].author.login' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_ENV
+          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --json title,author,number --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login' | tr '\n' '\n')
+          echo "changes<<EOF" >> $GITHUB_ENV
+          echo "$CHANGES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          NEW_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[] | .author.login' | sort -u | while read -r user; do
+            echo "* [@$user](https://github.com/$user)"
+          done)
+          echo "new_contributors<<EOF" >> $GITHUB_ENV
+          echo "$NEW_CONTRIBUTORS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          ALL_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[] | .author.login' | sort -u)
+          CONTRIBUTOR_COUNT=$(echo "$ALL_CONTRIBUTORS" | wc -l | tr -d ' ')
+          CONTRIBUTOR_LIST=$(echo "$ALL_CONTRIBUTORS" | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//')
+          
+          echo "contributor_summary<<EOF" >> $GITHUB_ENV
+          echo "$ALL_CONTRIBUTORS" | while read -r user; do
+            echo "@$user"
+          done
+          echo "EOF" >> $GITHUB_ENV
+          
+          if [ "$CONTRIBUTOR_COUNT" -gt 2 ]; then
+            FIRST_TWO=$(echo "$CONTRIBUTOR_LIST" | cut -d',' -f1,2)
+            OTHERS=$((CONTRIBUTOR_COUNT - 2))
+            echo "contributor_text=$FIRST_TWO, and $OTHERS other contributors" >> $GITHUB_ENV
+          else
+            echo "contributor_text=$CONTRIBUTOR_LIST" >> $GITHUB_ENV
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,10 +102,23 @@ jobs:
           tag_name: "v${{ github.event.inputs.version }}"
           release_name: "Version v${{ github.event.inputs.version }}"
           body: |
-            ## What's Changed
+            ## 🚀 What's Changed
+
             ${{ env.changes }}
-            ## New Contributors
-            ${{ env.contributors }}
+
+            ## 👥 New Contributors
+
+            Thank you to our new contributors! 🎉
+
+            ${{ env.new_contributors }}
+
+            ## 👥 Contributors
+
+            ${{ env.contributor_summary }}
+
+            ${{ env.contributor_text }}
+
+            ## 📦 Assets
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
