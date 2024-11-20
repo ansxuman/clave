@@ -2,7 +2,7 @@ name: Build Release
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 on:
   release:

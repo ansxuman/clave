@@ -5,6 +5,7 @@ permissions:
   pull-requests: read
   issues: read
   repository-projects: read
+  actions: write
 
 on:
   workflow_dispatch:
