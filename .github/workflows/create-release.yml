@@ -1,5 +1,11 @@
 name: Create Release
 
+permissions:
+  contents: write
+  pull-requests: read
+  issues: read
+  repository-projects: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -23,24 +29,53 @@ jobs:
           # Get changes since last release
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
-            START_DATE="2024-01-01"  # fallback date if no previous release
+            START_DATE="2024-01-01"
           else
             START_DATE=$(git log -1 --format=%ai $LAST_TAG)
           fi
           
-          # Get PRs merged since last release using GitHub CLI
-          gh auth status
-          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json title,author,number --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
+          # Get PRs merged since last release using GitHub CLI with explicit date filter
+          CHANGES=$(gh api graphql -f query='
+            query($repo:String!, $owner:String!, $since:DateTime!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequests(first: 100, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes {
+                    title
+                    number
+                    author {
+                      login
+                    }
+                    mergedAt
+                  }
+                }
+              }
+            }
+          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" -F since="${START_DATE}" --jq '.data.repository.pullRequests.nodes[] | select(.mergedAt > $START_DATE) | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
+          
           echo "changes<<EOF" >> $GITHUB_ENV
           echo "$CHANGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
-          # Get new contributors
-          NEW_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json author --jq '.[] | .author.login' | sort -u | while read -r user; do
-            echo "* [@$user](https://github.com/$user)"
-          done)
+          # Get contributors using GraphQL
+          CONTRIBUTORS=$(gh api graphql -f query='
+            query($repo:String!, $owner:String!, $since:DateTime!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequests(first: 100, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes {
+                    author {
+                      login
+                    }
+                    mergedAt
+                  }
+                }
+              }
+            }
+          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" -F since="${START_DATE}" --jq '.data.repository.pullRequests.nodes[] | select(.mergedAt > $START_DATE) | .author.login' | sort -u)
+          
           echo "new_contributors<<EOF" >> $GITHUB_ENV
-          echo "$NEW_CONTRIBUTORS" >> $GITHUB_ENV
+          echo "$CONTRIBUTORS" | while read -r user; do
+            echo "* [@$user](https://github.com/$user)"
+          done
           echo "EOF" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
