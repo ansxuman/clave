@@ -34,9 +34,9 @@ jobs:
             START_DATE=$(git log -1 --format=%ai $LAST_TAG)
           fi
           
-          # Get PRs merged since last release using GitHub CLI with explicit date filter
+          # Get PRs merged since last release using GitHub CLI
           CHANGES=$(gh api graphql -f query='
-            query($repo:String!, $owner:String!, $since:DateTime!) {
+            query($repo:String!, $owner:String!) {
               repository(owner: $owner, name: $repo) {
                 pullRequests(first: 100, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
                   nodes {
@@ -50,15 +50,16 @@ jobs:
                 }
               }
             }
-          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" -F since="${START_DATE}" --jq '.data.repository.pullRequests.nodes[] | select(.mergedAt > $START_DATE) | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
+          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" | \
+          jq -r --arg date "$START_DATE" '.data.repository.pullRequests.nodes[] | select(.mergedAt > $date) | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
           
           echo "changes<<EOF" >> $GITHUB_ENV
           echo "$CHANGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
-          # Get contributors using GraphQL
+          # Get contributors
           CONTRIBUTORS=$(gh api graphql -f query='
-            query($repo:String!, $owner:String!, $since:DateTime!) {
+            query($repo:String!, $owner:String!) {
               repository(owner: $owner, name: $repo) {
                 pullRequests(first: 100, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
                   nodes {
@@ -70,7 +71,8 @@ jobs:
                 }
               }
             }
-          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" -F since="${START_DATE}" --jq '.data.repository.pullRequests.nodes[] | select(.mergedAt > $START_DATE) | .author.login' | sort -u)
+          ' -F owner="${{ github.repository_owner }}" -F repo="${{ github.event.repository.name }}" | \
+          jq -r --arg date "$START_DATE" '.data.repository.pullRequests.nodes[] | select(.mergedAt > $date) | .author.login' | sort -u)
           
           echo "new_contributors<<EOF" >> $GITHUB_ENV
           echo "$CONTRIBUTORS" | while read -r user; do
