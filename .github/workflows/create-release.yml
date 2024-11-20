@@ -116,6 +116,6 @@ jobs:
               workflow_id: 'build-release.yml',
               ref: 'main',
               inputs: {
-                release_url: context.payload.release.upload_url
+                release_url: '${{ steps.create-release.outputs.upload_url }}'
               }
             })

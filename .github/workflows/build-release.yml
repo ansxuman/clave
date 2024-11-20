@@ -66,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event_name == 'release' && github.event.release.upload_url || inputs.release_url }}
+          upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: darwinBinaries/Clave.zip
           asset_name: Clave-macos.zip
           asset_content_type: application/zip
@@ -124,7 +124,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event_name == 'release' && github.event.release.upload_url || inputs.release_url }}
+          upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: windowsBinaries/Clave.zip
           asset_name: Clave-windows.zip
           asset_content_type: application/zip
@@ -185,7 +185,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event_name == 'release' && github.event.release.upload_url || inputs.release_url }}
+          upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: linuxBinaries/Clave.zip
           asset_name: Clave-linux.zip
           asset_content_type: application/zip
