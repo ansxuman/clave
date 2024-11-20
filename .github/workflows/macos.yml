@@ -26,19 +26,17 @@ jobs:
       - name: Get Merged PR Details
         id: changelog
         run: |
-          # Authenticate GitHub CLI first
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-          
           # Get changes since last release
-          LAST_TAG=$(gh release list --limit 1 | cut -f 3)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
             START_DATE="2024-01-01"  # fallback date if no previous release
           else
             START_DATE=$(git log -1 --format=%ai $LAST_TAG)
           fi
           
-          # Get PRs merged since last release
-          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json title,author,number,mergedAt --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login' | tr '\n' '\n')
+          # Get PRs merged since last release using GitHub CLI
+          gh auth status
+          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json title,author,number --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
           echo "changes<<EOF" >> $GITHUB_ENV
           echo "$CHANGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -76,8 +74,7 @@ jobs:
             echo "contributor_text=No contributors in this release" >> $GITHUB_ENV
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Added this as some versions need GH_TOKEN
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Go
         uses: actions/setup-go@v4
