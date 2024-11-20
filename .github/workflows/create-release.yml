@@ -1,0 +1,63 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for the release (e.g., 1.1.0)'
+        required: true
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Merged PR Details
+        id: changelog
+        run: |
+          # Get changes since last release
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            START_DATE="2024-01-01"  # fallback date if no previous release
+          else
+            START_DATE=$(git log -1 --format=%ai $LAST_TAG)
+          fi
+          
+          # Get PRs merged since last release using GitHub CLI
+          gh auth status
+          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json title,author,number --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login')
+          echo "changes<<EOF" >> $GITHUB_ENV
+          echo "$CHANGES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Get new contributors
+          NEW_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json author --jq '.[] | .author.login' | sort -u | while read -r user; do
+            echo "* [@$user](https://github.com/$user)"
+          done)
+          echo "new_contributors<<EOF" >> $GITHUB_ENV
+          echo "$NEW_CONTRIBUTORS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        with:
+          tag_name: "v${{ github.event.inputs.version }}"
+          release_name: "Clave v${{ github.event.inputs.version }}"
+          body: |
+            ## 🚀 What's Changed
+            ${{ env.changes}}
+
+            ## 👥 New Contributors
+            ${{ env.new_contributors}}
+
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

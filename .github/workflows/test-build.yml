@@ -1,13 +1,16 @@
-name: Build and Test
+name: Test Build
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build:
-    name: Build and Test
-    runs-on: macos-latest
+  test-build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test Build (${{ matrix.os }})
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
           cache: true
 
       - name: Install Task
@@ -28,7 +31,14 @@ jobs:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
       - name: Setup Wails Dependencies
+        shell: bash
         run: |
           mkdir -p ../github
           cd ../github
@@ -38,16 +48,17 @@ jobs:
           cd v3/cmd/wails3
           go install
           cd ../../../..
-          pwd
-          ls -la
 
-      - name: Update go.mod
+      - name: Update go.mod (Unix)
+        if: runner.os != 'Windows'
         run: |
-          sed -i '' 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
-          cat go.mod
+          sed -i'' -e 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Update go.mod (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          (Get-Content go.mod) -replace '../../Project/github/wails/v3', '../github/wails/v3' | Set-Content go.mod
 
       - name: Build Project
         run: wails3 build
