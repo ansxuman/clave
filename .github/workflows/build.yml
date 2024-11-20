@@ -1,0 +1,53 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Wails Dependencies
+        run: |
+          mkdir -p ../github
+          cd ../github
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+          cd ../../../..
+          pwd
+          ls -la
+
+      - name: Update go.mod
+        run: |
+          sed -i '' 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          cat go.mod
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: wails3 build
