@@ -26,37 +26,58 @@ jobs:
       - name: Get Merged PR Details
         id: changelog
         run: |
-          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --json title,author,number --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login' | tr '\n' '\n')
+          # Authenticate GitHub CLI first
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          
+          # Get changes since last release
+          LAST_TAG=$(gh release list --limit 1 | cut -f 3)
+          if [ -z "$LAST_TAG" ]; then
+            START_DATE="2024-01-01"  # fallback date if no previous release
+          else
+            START_DATE=$(git log -1 --format=%ai $LAST_TAG)
+          fi
+          
+          # Get PRs merged since last release
+          CHANGES=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json title,author,number,mergedAt --jq '.[] | "* " + .title + " (#" + (.number|tostring) + ") by @" + .author.login' | tr '\n' '\n')
           echo "changes<<EOF" >> $GITHUB_ENV
           echo "$CHANGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
-          NEW_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[] | .author.login' | sort -u | while read -r user; do
+          # Get new contributors
+          NEW_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json author --jq '.[] | .author.login' | sort -u | while read -r user; do
             echo "* [@$user](https://github.com/$user)"
           done)
           echo "new_contributors<<EOF" >> $GITHUB_ENV
           echo "$NEW_CONTRIBUTORS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
-          ALL_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --json author --jq '.[] | .author.login' | sort -u)
-          CONTRIBUTOR_COUNT=$(echo "$ALL_CONTRIBUTORS" | wc -l | tr -d ' ')
-          CONTRIBUTOR_LIST=$(echo "$ALL_CONTRIBUTORS" | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//')
+          # Get all contributors
+          ALL_CONTRIBUTORS=$(gh pr list --repo ${{ github.repository }} --state merged --search "merged:>$START_DATE" --json author --jq '.[] | .author.login' | sort -u)
           
+          # Format contributor summary
           echo "contributor_summary<<EOF" >> $GITHUB_ENV
           echo "$ALL_CONTRIBUTORS" | while read -r user; do
             echo "@$user"
           done
           echo "EOF" >> $GITHUB_ENV
           
-          if [ "$CONTRIBUTOR_COUNT" -gt 2 ]; then
-            FIRST_TWO=$(echo "$CONTRIBUTOR_LIST" | cut -d',' -f1,2)
-            OTHERS=$((CONTRIBUTOR_COUNT - 2))
-            echo "contributor_text=$FIRST_TWO, and $OTHERS other contributors" >> $GITHUB_ENV
+          # Format contributor text
+          CONTRIBUTOR_COUNT=$(echo "$ALL_CONTRIBUTORS" | wc -l | tr -d ' ')
+          if [ "$CONTRIBUTOR_COUNT" -gt 0 ]; then
+            CONTRIBUTOR_LIST=$(echo "$ALL_CONTRIBUTORS" | paste -sd "," - | sed 's/,/, /g')
+            if [ "$CONTRIBUTOR_COUNT" -gt 2 ]; then
+              FIRST_TWO=$(echo "$CONTRIBUTOR_LIST" | cut -d',' -f1,2)
+              OTHERS=$((CONTRIBUTOR_COUNT - 2))
+              echo "contributor_text=$FIRST_TWO, and $OTHERS other contributors" >> $GITHUB_ENV
+            else
+              echo "contributor_text=$CONTRIBUTOR_LIST" >> $GITHUB_ENV
+            fi
           else
-            echo "contributor_text=$CONTRIBUTOR_LIST" >> $GITHUB_ENV
+            echo "contributor_text=No contributors in this release" >> $GITHUB_ENV
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Added this as some versions need GH_TOKEN
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -103,18 +124,13 @@ jobs:
           release_name: "Version v${{ github.event.inputs.version }}"
           body: |
             ## 🚀 What's Changed
-
-            ${{ env.changes }}
+            ${{ env.changes || 'No changes in this release' }}
 
             ## 👥 New Contributors
-
-            Thank you to our new contributors! 🎉
-
-            ${{ env.new_contributors }}
+            ${{ env.new_contributors || 'No new contributors in this release' }}
 
             ## 👥 Contributors
-
-            ${{ env.contributor_summary }}
+            ${{ env.contributor_summary || 'No contributors in this release' }}
 
             ${{ env.contributor_text }}
 
