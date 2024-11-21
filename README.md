@@ -1,5 +1,5 @@
 <div align="center">
- <img src="build/appicon.png" alt="NeoHtop Logo" width="120" />
+ <img src="build/appicon.png" alt="Clave Logo" width="120" />
   <h1>Clave</h1>
   <p>A SIMPLE, SECURE, and FREE lightweight cross-platform desktop authenticator app packed with powerful features.</p>
 
