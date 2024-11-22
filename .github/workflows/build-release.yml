@@ -91,6 +91,11 @@ jobs:
           go-version: '1.23'
           cache: true
 
+      # - name: Install Scoop and NSIS
+      #   uses: MinoruSekine/setup-scoop@v4.0.1
+      #   with:
+      #     apps: nsis
+
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
