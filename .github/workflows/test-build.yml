@@ -2,7 +2,7 @@ name: Test Build
 
 on:
   push:
-    branches: [main]
+    branches: [m]
 
 jobs:
   test-build:
