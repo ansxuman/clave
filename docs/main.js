@@ -3,7 +3,10 @@ const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
 function setTheme(isDark) {
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  themeToggle.querySelector('.theme-icon').textContent = isDark ? '☀️' : '🌙';
+  const themeIcon = themeToggle?.querySelector('.theme-icon');
+  if (themeIcon) {
+    themeIcon.textContent = isDark ? '☀️' : '🌙';
+  }
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
 }
 
@@ -14,7 +17,7 @@ if (savedTheme) {
   setTheme(prefersDark.matches);
 }
 
-themeToggle.addEventListener('click', () => {
+themeToggle?.addEventListener('click', () => {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   setTheme(!isDark);
 });
@@ -28,12 +31,16 @@ prefersDark.addEventListener('change', (e) => {
 async function updateVersion() {
   try {
     const response = await fetch('https://api.github.com/repos/ansxuman/clave/releases/latest');
+    if (!response.ok) {
+      throw new Error('Failed to fetch releases');
+    }
     const data = await response.json();
-    const version = data.tag_name;
-    const versionNumber = version.match(/\d+\.\d+\.\d+/)?.[0];
-
+    if (!data || !data.tag_name) {
+      throw new Error('Invalid release data');
+    }
+    
+    const versionNumber = data.tag_name.replace(/^v/, '');
     if (versionNumber) {
-      document.getElementById('current-version').textContent = "v" + versionNumber;
       updateDownloadLinks(versionNumber);
     }
   } catch (error) {
@@ -43,36 +50,29 @@ async function updateVersion() {
 
 function updateDownloadLinks(versionNumber) {
   const platformUrls = {
-    'macos-intel': `intel-Clave_${versionNumber}_x64.dmg`,
-    'macos-silicon': `silicon-Clave_${versionNumber}_aarch64.dmg`,
-    'windows': `Clave_${versionNumber}_x64.exe`,
-    'linux-deb-amd64': `Clave_${versionNumber}_amd64.deb`,
+    'mac-intel': `Clave-${versionNumber}-x64.dmg`,
+    'mac-silicon': `Clave-${versionNumber}-arm64.dmg`,
+    'windows': `Clave-Setup-${versionNumber}-x64.exe`,
+    'linux': `clave_${versionNumber}_amd64.deb`,
   };
 
   document.querySelectorAll('.download-button').forEach(link => {
-    const platform = link.getAttribute('data-type');
-    if (platformUrls[platform]) {
+    const platform = link.getAttribute('data-platform');
+    if (platform && platformUrls[platform]) {
       link.href = `https://github.com/ansxuman/clave/releases/download/v${versionNumber}/${platformUrls[platform]}`;
     }
   });
 }
 
-document.querySelectorAll('.faq-question').forEach(button => {
-  button.addEventListener('click', () => {
-    const faqItem = button.parentElement;
-    const isActive = faqItem.classList.contains('active');
-    document.querySelectorAll('.faq-item').forEach(item => item.classList.remove('active'));
-    if (!isActive) faqItem.classList.add('active');
-  });
-});
-
 document.querySelectorAll('.download-button').forEach(button => {
   button.addEventListener('click', (e) => {
-    gtag('event', 'download', {
-      'event_category': 'App',
-      'event_label': button.getAttribute('data-type'),
-      'value': button.getAttribute('data-version')
-    });
+    if (typeof gtag === 'function') {
+      gtag('event', 'download', {
+        'event_category': 'App',
+        'event_label': button.getAttribute('data-platform'),
+        'value': versionNumber
+      });
+    }
   });
 });
 
@@ -86,48 +86,15 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof AOS !== 'undefined') {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100
     });
-  },
-  { threshold: 0.1 }
-);
-
-document.querySelectorAll('.feature, .step, .download-button').forEach(el => {
-  observer.observe(el);
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
+  }
   updateVersion();
-  fetchDownloadStats();
-});
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const menuButton = document.querySelector('.menu-button');
-  const navLinks = document.querySelector('.nav-links');
-
-  menuButton.addEventListener('click', () => {
-    navLinks.classList.toggle('active');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!navLinks.contains(e.target) && !menuButton.contains(e.target)) {
-      navLinks.classList.remove('active');
-    }
-  });
-});
-
-AOS.init({
-  duration: 800,
-  once: true,
-  offset: 100
 });
 
 const smoothScroll = (target) => {

@@ -131,17 +131,14 @@ nav {
   border-radius: 24px;
   border: 1px solid var(--border);
   z-index: 2;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 [data-theme="dark"] .hero-content {
   background: rgba(24, 24, 27, 0.8);
-}
-
-.hero-background {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .app-preview {
@@ -174,10 +171,10 @@ nav {
 }
 
 .gradient-text {
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: 800;
   line-height: 1.1;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   background: var(--gradient);
   -webkit-background-clip: text;
   color: transparent;
@@ -186,13 +183,13 @@ nav {
 .hero-subtitle {
   font-size: 1.25rem;
   color: var(--text-secondary);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .hero-stats {
   display: flex;
   gap: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat {
@@ -516,7 +513,7 @@ nav {
   }
 
   .gradient-text {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
   }
 
   .hero-stats {
@@ -526,13 +523,7 @@ nav {
   .hero-cta {
     justify-content: center;
   }
-
-  .hero-background {
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-
+  
   .menu-button {
     display: block;
   }
@@ -592,7 +583,6 @@ nav {
   transform: rotate(180deg);
 }
 
-/* Mobile Theme Toggle */
 @media (max-width: 768px) {
   .theme-toggle {
     width: 36px;
@@ -602,4 +592,49 @@ nav {
   .theme-icon {
     font-size: 1rem;
   }
+}
+
+
+.app-preview img {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.app-preview {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+.feature-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.5;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
 }
