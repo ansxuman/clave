@@ -52,7 +52,7 @@ jobs:
 
       - name: Update go.mod
         run: |
-          sed -i '' 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          sed -i '' 's|../wails/v3|../github/wails/v3|g' go.mod
 
       - name: Build Release Binaries
         run: |
@@ -179,7 +179,7 @@ jobs:
 
       - name: Update go.mod
         run: |
-          sed -i 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          sed -i 's|../wails/v3|../github/wails/v3|g' go.mod
 
       - name: Build Release Binaries
         run: |
