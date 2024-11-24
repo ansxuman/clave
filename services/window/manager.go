@@ -7,8 +7,9 @@ import (
 )
 
 type Manager struct {
-	window      *application.WebviewWindow
-	authService AuthService
+	window          *application.WebviewWindow
+	authService     AuthService
+	isAddingProfile bool
 }
 
 type AuthService interface {
@@ -20,7 +21,8 @@ type AuthService interface {
 
 func NewManager(authService AuthService) *Manager {
 	return &Manager{
-		authService: authService,
+		authService:     authService,
+		isAddingProfile: false,
 	}
 }
 
@@ -31,6 +33,10 @@ func (m *Manager) SetWindow(window *application.WebviewWindow) {
 
 func (m *Manager) setupWindowEvents() {
 	focusHandler := func(e *application.WindowEvent) {
+		if m.isAddingProfile {
+			return
+		}
+
 		if !m.authService.HasPin() || m.authService.IsVerified() {
 			return
 		}
@@ -40,7 +46,9 @@ func (m *Manager) setupWindowEvents() {
 
 	m.window.OnWindowEvent(events.Common.WindowFocus, focusHandler)
 	m.window.OnWindowEvent(events.Common.WindowLostFocus, func(e *application.WindowEvent) {
-		m.authService.SetVerified(false)
+		if !m.isAddingProfile {
+			m.authService.SetVerified(false)
+		}
 	})
 }
 
@@ -52,4 +60,12 @@ func (m *Manager) HandleTouchID() bool {
 		return true
 	}
 	return false
+}
+
+func (m *Manager) StartProfileAddition() {
+	m.isAddingProfile = true
+}
+
+func (m *Manager) EndProfileAddition() {
+	m.isAddingProfile = false
 }

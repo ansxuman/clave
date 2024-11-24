@@ -5,9 +5,10 @@
         FileUp,
         KeyRound} from 'lucide-svelte';
     import * as wails from '@wailsio/runtime';
-    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile } from '../../../../bindings/clave/backend/app';
+    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile, AddManualProfile } from '../../../../bindings/clave/backend/app';
     import type { TOTPProfile, MenuOption, TOTPEvent } from '../../types/totp';
     import { generateTOTP } from '../../utils/totp';
+    import About from '../about/About.svelte';
 
     let profiles: TOTPProfile[] = [];
     let showMenu = false;
@@ -16,12 +17,29 @@
     let showAddMenu = false;
     let isLoading = true;
     let updateInterval = setInterval(updateProfiles, 1000);
+    let showManualEntryModal = false;
+    let manualIssuer = "";
+    let manualSecret = "";
+    let currentView = 'main';
+    let showConfirmModal = false;
+    let profileToDelete: string | null = null;
+
+    const w = wails.Window;
 
     const menuItems: MenuOption[] = [
         { label: 'Settings', action: () => console.log('Settings clicked') },
-        { label: 'Export Profiles', action: () => console.log('Export clicked') },
-        { label: 'About', action: () => console.log('About clicked') }
+        { 
+            label: 'About', 
+            action: () => {
+                currentView = 'about';
+                showMenu = false;
+            }
+        }
     ];
+
+    function handleBackFromAbout() {
+        currentView = 'main';
+    }
 
     const addOptions: MenuOption[] = [
         { 
@@ -29,16 +47,14 @@
             icon: QrCode,
             action: () => OpenQR() 
         },
-        // { 
-        //     label: 'Manual Entry', 
-        //     icon: KeyRound,
-        //     action: () => console.log('Manual entry clicked') 
-        // },
-        // { 
-        //     label: 'Import from File', 
-        //     icon: FileUp,
-        //     action: () => console.log('Import clicked') 
-        // }
+        { 
+            label: 'Manual Entry', 
+            icon: KeyRound,
+            action: () => {
+                showManualEntryModal = true;
+                showAddMenu = false;
+            }
+        }
     ];
 
     onMount(async () => {
@@ -66,20 +82,30 @@
 
     async function focusWindow() {
         try {
-            const w = wails.Window;
             await w.Show();
             await w.Focus();
         } catch (err) {
             console.error("Window API error:", err);
         }
     }
-
     function InitEventListeners() {
         wails.Events.On("totpData", handleTOTPData);
-        wails.Events.On("duplicateScanQR", handleDuplicateQR);
-        wails.Events.On("refreshTOTPProfiles", () => SendTOTPData());
-        wails.Events.On("failedToScanQR", () => showToast("Failed to scan QR code. Please try again."));
+        wails.Events.On("refreshProfiles", async () => {
+            showToast("Profiles added successfully");
+            await SendTOTPData();
+            await focusWindow();
+        });
+
+        wails.Events.On("failedToAddProfile", (event: { data: string[] }) => {
+            showToast(event.data[0] || "Failed to add profile. Please try again.");
+            showManualEntryModal = false;
+        });
+
+        wails.Events.On("duplicateProfile",  (event: { data: string[] }) => { 
+            showToast(event.data[0] || "Profile already exists")
+        });
     }
+
     function handleTOTPData(event: TOTPEvent) {
         if (!event?.data) {
             profiles = [];
@@ -93,10 +119,6 @@
         }
 
         updateProfiles();
-    }
-
-    function handleDuplicateQR(profile: TOTPProfile) {
-        showToast(`Profile for ${profile.issuer} already exists`);
     }
 
     function updateProfiles() {
@@ -114,12 +136,22 @@
         onDestroy(() => clearInterval(updateInterval));
 
     async function removeUserProfile(id: string) {
+        profileToDelete = id;
+        showConfirmModal = true;
+    }
+
+    async function handleConfirmDelete() {
+        if (!profileToDelete) return;
+        
         try {
-            await RemoveTotpProfile(id);
+            await RemoveTotpProfile(profileToDelete);
             showToast("Profile removed successfully");  
             await SendTOTPData();
         } catch (err) {
             showToast("Failed to remove profile");
+        } finally {
+            showConfirmModal = false;
+            profileToDelete = null;
         }
     }
 
@@ -138,9 +170,25 @@
             showToast("Failed to copy code");
         }
     }
+
+    async function handleManualEntry() {
+        if (!manualIssuer || !manualSecret) {
+            showToast("Please fill in all fields");
+            return;
+        }
+
+        try {
+            await AddManualProfile(manualIssuer, manualSecret.toUpperCase());
+            showManualEntryModal = false;
+            manualIssuer = "";
+            manualSecret = "";
+        } catch (err) {
+            console.log(err)
+        }
+    }
 </script>
 
-
+{#if currentView === 'main'}
 <div class="relative min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
     <header class="sticky top-0 backdrop-blur-md bg-gray-900/50 border-b border-gray-700/30 px-6 py-4 z-50">
         <div class="max-w-5xl mx-auto flex items-center justify-between">
@@ -194,7 +242,7 @@
                     <h3 class="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                         No Profiles Yet
                     </h3>
-                    <p class="text-sm text-gray-400">Click the + button below to add your first authentication profile</p>
+                    <p class="text-sm text-gray-400">Click the + button below to add your first profile</p>
                 </div>
             </div>
         {:else}
@@ -271,7 +319,99 @@
             {toastMessage}
         </div>
     {/if}
+
+    {#if showManualEntryModal}
+        <div 
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            transition:fade={{ duration: 200 }}
+            on:click|self={() => showManualEntryModal = false}
+        >
+            <div 
+                class="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 border border-gray-700/50"
+                transition:slide={{ duration: 200 }}
+            >
+                <h3 class="text-lg font-semibold mb-4">Add Manual Entry</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">issuer Name</label>
+                        <input
+                            type="text"
+                            bind:value={manualIssuer}
+                            placeholder="e.g., Google, GitHub"
+                            class="w-full px-3 py-2 bg-gray-700/50 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Secret Key</label>
+                        <input
+                            type="text"
+                            bind:value={manualSecret}
+                            placeholder="Enter TOTP secret key"
+                            class="w-full px-3 py-2 bg-gray-700/50 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all uppercase"
+                        />
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                        on:click={() => showManualEntryModal = false}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors"
+                        on:click={handleManualEntry}
+                    >
+                        Add Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+
+    {#if showConfirmModal}
+        <div 
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            transition:fade={{ duration: 200 }}
+            on:click|self={() => showConfirmModal = false}
+        >
+            <div 
+                class="bg-gray-800 rounded-lg p-6 w-full max-w-sm mx-4 border border-gray-700/50"
+                transition:slide={{ duration: 200 }}
+            >
+                <h3 class="text-lg font-semibold mb-2">Remove Profile</h3>
+                <p class="text-sm text-gray-400 mb-6">
+                    Are you sure you want to remove this profile?
+                </p>
+                
+                <div class="flex justify-end gap-3">
+                    <button
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                        on:click={() => {
+                            showConfirmModal = false;
+                            profileToDelete = null;
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="px-4 py-2 text-sm bg-red-500 hover:bg-red-400 rounded-lg transition-colors"
+                        on:click={handleConfirmDelete}
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
 </div>
+{:else if currentView === 'about'}
+    <About onBack={handleBackFromAbout} />
+{/if}
+
 
 <style>
     @keyframes gradient-flow {
