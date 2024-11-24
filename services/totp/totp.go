@@ -18,8 +18,9 @@ import (
 )
 
 type Service struct {
-	storage Storage
-	window  *application.WebviewWindow
+	storage    Storage
+	window     *application.WebviewWindow
+	winManager WindowManager
 }
 
 type Storage interface {
@@ -29,9 +30,15 @@ type Storage interface {
 	DeleteTotpSecretObject(profileId string) error
 }
 
-func NewService(storage Storage) *Service {
+type WindowManager interface {
+	StartProfileAddition()
+	EndProfileAddition()
+}
+
+func NewService(storage Storage, winManager WindowManager) *Service {
 	return &Service{
-		storage: storage,
+		storage:    storage,
+		winManager: winManager,
 	}
 }
 
@@ -42,19 +49,26 @@ func (s *Service) SetWindow(window *application.WebviewWindow) {
 }
 
 func (s *Service) OpenQR() error {
+	s.winManager.StartProfileAddition()
+
 	dialog := application.OpenFileDialog().
 		SetTitle("Select QR Code Image").
 		AddFilter("Image Files", "*.png;*.jpg;*.jpeg")
 
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
+		s.winManager.EndProfileAddition()
 		log.Printf("[TOTP] Failed to open QR image: %v", err)
 		return err
 	}
 
 	if result != "" {
-		return s.scanQRCode(result)
+		err = s.scanQRCode(result)
+		s.winManager.EndProfileAddition()
+		return err
 	}
+
+	s.winManager.EndProfileAddition()
 	return nil
 }
 
@@ -87,50 +101,67 @@ func (s *Service) scanQRCode(path string) error {
 	return nil
 }
 
+const (
+	EventTOTPData           = "totpData"
+	EventFailedToAddProfile = "failedToAddProfile"
+	EventRefreshProfiles    = "refreshProfiles"
+	EventDuplicateProfile   = "duplicateProfile"
+)
+
 func (s *Service) configureQRProfile(qrData []uint8) error {
 	parsedURL, err := url.Parse(string(qrData))
 	if err != nil {
 		log.Printf("[TOTP] Failed to parse QR data: %v", err)
-		s.window.EmitEvent("failedToScanQR", "Invalid QR code format")
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Invalid QR code format")
 		return err
 	}
 
 	if parsedURL.Scheme != "otpauth" || parsedURL.Host != "totp" {
-		s.window.EmitEvent("failedToScanQR", "Invalid TOTP URI format")
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Invalid TOTP URI format")
 		return fmt.Errorf("invalid URI format")
 	}
 
 	secret := parsedURL.Query().Get("secret")
 	if secret == "" {
-		s.window.EmitEvent("failedToScanQR", "Missing secret parameter")
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Missing secret parameter")
 		return fmt.Errorf("missing secret")
 	}
 	base32Regex := regexp.MustCompile(`^[A-Z2-7]+=*$`)
 	if !base32Regex.MatchString(secret) {
-		s.window.EmitEvent("failedToScanQR", "Invalid secret format")
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Invalid secret format")
 		return fmt.Errorf("invalid secret format")
 	}
 
 	path := strings.TrimPrefix(parsedURL.Path, "/")
 	issuer := strings.TrimSuffix(path, "/")
 	if issuer == "" {
-		s.window.EmitEvent("failedToScanQR", "Missing issuer")
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Missing issuer")
 		return fmt.Errorf("missing issuer")
 	}
 
 	exists, profile := s.storage.CheckIfIssuerOrSecretExists(issuer, secret)
 	if exists {
+		s.window.Show()
 		log.Printf("[TOTP] Profile already exists for issuer: %s", issuer)
-		s.window.EmitEvent("duplicateScanQR", profile)
+		s.window.EmitEvent(EventDuplicateProfile, fmt.Sprintf("Profile '%s' already exists", profile.Issuer))
 		return nil
 	}
 
 	if err := s.storage.AddTotpSecretObject(issuer, secret); err != nil {
 		log.Printf("[TOTP] Failed to save profile: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventFailedToAddProfile, "Failed to save profile")
+		s.winManager.EndProfileAddition()
 		return err
 	}
-
-	s.window.EmitEvent("refreshTOTPProfiles", nil)
+	s.window.Show()
+	s.window.EmitEvent(EventRefreshProfiles, nil)
+	s.winManager.EndProfileAddition()
 	return nil
 }
 
@@ -143,14 +174,38 @@ func (s *Service) SendTOTPData() {
 	listOfSecrets := s.storage.GetListOfTotpSecretObjects()
 	if len(listOfSecrets) == 0 {
 		log.Printf("[TOTP] No profiles found")
-		s.window.EmitEvent("totpData", []objects.TotpSecretObject{})
+		s.window.EmitEvent(EventTOTPData, []objects.TotpSecretObject{})
 		return
 	}
 
 	log.Printf("[TOTP] Sending %d profiles", len(listOfSecrets))
-	s.window.EmitEvent("totpData", listOfSecrets)
+	s.window.EmitEvent(EventTOTPData, listOfSecrets)
 }
 
 func (s *Service) RemoveTotpProfile(profileId string) error {
 	return s.storage.DeleteTotpSecretObject(profileId)
+}
+
+func (s *Service) AddManualProfile(issuer string, secret string) error {
+	base32Regex := regexp.MustCompile(`^[A-Z2-7]+=*$`)
+	if !base32Regex.MatchString(secret) {
+		s.window.EmitEvent(EventFailedToAddProfile, "Invalid secret format")
+		return fmt.Errorf("invalid secret format")
+	}
+
+	exists, profile := s.storage.CheckIfIssuerOrSecretExists(issuer, secret)
+	if exists {
+		log.Printf("[TOTP] Profile already exists for issuer: %s", issuer)
+		s.window.EmitEvent(EventDuplicateProfile, fmt.Sprintf("Profile '%s' already exists", profile.Issuer))
+		return nil
+	}
+
+	if err := s.storage.AddTotpSecretObject(issuer, secret); err != nil {
+		log.Printf("[TOTP] Failed to save profile: %v", err)
+		s.window.EmitEvent(EventFailedToAddProfile, "Failed to add profile")
+		return err
+	}
+
+	s.window.EmitEvent("refreshTOTPProfiles", nil)
+	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"clave/services/auth"
 	"clave/services/totp"
 	"clave/services/window"
+	"fmt"
 	"runtime"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -26,18 +27,18 @@ type App struct {
 func NewApp() *App {
 	storage := localstorage.GetPersistentStorage()
 	authService := auth.NewService(storage)
-	totpService := totp.NewService(storage)
 
 	app := &App{
 		cancel:      cmap.New[func()](),
 		authService: authService,
-		totpService: totpService,
 		isVerified:  false,
 		isMacOS:     runtime.GOOS == "darwin",
 		firstMount:  true,
 	}
 
 	app.winManager = window.NewManager(app)
+	app.totpService = totp.NewService(storage, app.winManager)
+
 	return app
 }
 
@@ -114,4 +115,11 @@ func (a *App) RemoveTotpProfile(profileId string) error {
 		return nil
 	}
 	return a.totpService.RemoveTotpProfile(profileId)
+}
+
+func (a *App) AddManualProfile(issuer string, secret string) error {
+	if a.totpService == nil {
+		return fmt.Errorf("TOTP service not initialized")
+	}
+	return a.totpService.AddManualProfile(issuer, secret)
 }

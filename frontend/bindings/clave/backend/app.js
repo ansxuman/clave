@@ -14,6 +14,16 @@ import * as objects$0 from "../objects/models.js";
 import * as application$0 from "../../github.com/wailsapp/wails/v3/pkg/application/models.js";
 
 /**
+ * @param {string} issuer
+ * @param {string} secret
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function AddManualProfile(issuer, secret) {
+    let $resultPromise = /** @type {any} */($Call.ByID(2179556590, issuer, secret));
+    return $resultPromise;
+}
+
+/**
  * @returns {Promise<string> & { cancel(): void }}
  */
 export function GetAppVersion() {
