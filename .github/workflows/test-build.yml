@@ -53,7 +53,7 @@ jobs:
       - name: Update go.mod (Unix)
         if: runner.os != 'Windows'
         run: |
-          sed -i'' -e 's|../../Project/github/wails/v3|../github/wails/v3|g' go.mod
+          sed -i'' -e 's|../wails/v3|../github/wails/v3|g' go.mod
 
       - name: Update go.mod (Windows)
         if: runner.os == 'Windows'
