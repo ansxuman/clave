@@ -59,7 +59,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          (Get-Content go.mod) -replace '../../Project/github/wails/v3', '../github/wails/v3' | Set-Content go.mod
+          (Get-Content go.mod) -replace '../wails/v3', '../github/wails/v3' | Set-Content go.mod
 
       - name: Build Project
         run: wails3 build
