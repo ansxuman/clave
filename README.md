@@ -42,4 +42,4 @@ If you find Clave helpful, consider supporting its development and future update
 
 ## **License**
 
-This project is open-source and available under the [MIT License](LICENSE.txt).
+This project is open-source and available under the [MIT License](LICENSE).
