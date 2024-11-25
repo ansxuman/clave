@@ -58,6 +58,7 @@ jobs:
         run: |
           mkdir -p darwinBinaries
           wails3 doctor
+          wails3 task common:update:build-assets
           wails3 package
           zip -r Clave.zip bin/Clave.app
           mv Clave.zip darwinBinaries/
@@ -91,11 +92,6 @@ jobs:
           go-version: '1.23'
           cache: true
 
-      # - name: Install Scoop and NSIS
-      #   uses: MinoruSekine/setup-scoop@v4.0.1
-      #   with:
-      #     apps: nsis
-
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
@@ -123,6 +119,7 @@ jobs:
         run: |
           mkdir windowsBinaries
           wails3 doctor
+          wails3 task common:update:build-assets
           wails3 package
           Compress-Archive -Path bin\Clave.exe -DestinationPath windowsBinaries\Clave.zip
 
@@ -185,6 +182,7 @@ jobs:
         run: |
           mkdir -p linuxBinaries
           wails3 doctor
+          wails3 task common:update:build-assets
           wails3 package
           zip -r Clave.zip bin/Clave
           mv Clave.zip linuxBinaries/

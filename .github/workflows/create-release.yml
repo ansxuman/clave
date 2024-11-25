@@ -88,6 +88,22 @@ jobs:
           git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
           git push origin "v${{ github.event.inputs.version }}"
 
+      - name: Update Version in Config
+        run: |
+          VERSION="v${{ github.event.inputs.version }}"
+          
+          # Update AppVersion in CommmonVariables.go
+          sed -i "s/AppVersion = .*/const AppVersion = \"$VERSION\"/" constants/CommmonVariables.go
+          git add constants/CommmonVariables.go
+          
+          # Update version in config.yml
+          sed -i "s/version: .*/version: \"$VERSION\"/" build/config.yml
+          git add build/config.yml
+          
+          # Commit changes
+          git commit -m "Update AppVersion to $VERSION in CommmonVariables.go and version in config.yml"
+          git push origin main
+
       - name: Create Release
         id: create-release
         uses: actions/create-release@v1

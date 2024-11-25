@@ -5,13 +5,13 @@ version: '3'
 
 # This information is used to generate the build assets.
 info:
-  companyName: "My Company" # The name of the company
-  productName: "My Product" # The name of the application
-  productIdentifier: "com.mycompany.myproduct" # The unique product identifier
-  description: "A program that does X" # The application description
-  copyright: "(c) 2024, My Company" # Copyright text
-  comments: "Some Product Comments" # Comments
-  version: "v0.0.1" # The application version
+  companyName: "Clave" # The name of the company
+  productName: "Clave" # The name of the application
+  productIdentifier: "com.ansxuman.clave" # The unique product identifier
+  description: "Secure Authentication at Your Fingertips" # The application description
+  copyright: "© 2024 Clave. Licensed under MIT License." # Copyright text
+  comments: "Secure Authentication at Your Fingertips" # Comments
+  version: "0.1.0" # The application version
 
 # Dev mode configuration
 dev_mode:
