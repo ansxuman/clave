@@ -90,18 +90,20 @@ jobs:
 
       - name: Update Version in Config
         run: |
-          VERSION="${{ github.event.inputs.version }}" # Remove the leading 'v' from the version input
+          # Strip the 'v' prefix if it exists
+          VERSION="${{ github.event.inputs.version }}"
+          CLEAN_VERSION="${VERSION#v}"
           
           # Update AppVersion in CommmonVariables.go
-          sed -i "s/const AppVersion = .*/const AppVersion = \"$VERSION\"/" constants/CommmonVariables.go
+          sed -i "s/const AppVersion = .*/const AppVersion = \"$CLEAN_VERSION\"/" constants/CommmonVariables.go
           git add constants/CommmonVariables.go
           
-          # Update version in config.yml (only in the info section)
-          sed -i "s/version: .*/version: \"$VERSION\"/" build/config.yml
+          # Update version in config.yml (specifically in the info section)
+          sed -i "/^info:/,/^[^ ]/ s/  version: .*/  version: \"$CLEAN_VERSION\"/" build/config.yml
           git add build/config.yml
           
           # Commit changes
-          git commit -m "Update AppVersion to $VERSION in CommmonVariables.go and version in config.yml"
+          git commit -m "Update AppVersion to $CLEAN_VERSION in CommmonVariables.go and version in config.yml"
           git push origin main
 
       - name: Create Release

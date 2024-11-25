@@ -54,15 +54,33 @@ jobs:
         run: |
           sed -i '' 's|../wails/v3|../github/wails/v3|g' go.mod
 
-      - name: Build Release Binaries
+      - name: Import Code-Signing Certificates
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+
+      - name: Build and Sign Release Binaries
         run: |
           mkdir -p darwinBinaries
           wails3 doctor
           wails3 task common:update:build-assets
           wails3 package
-          zip -r Clave.zip bin/Clave.app
-          mv Clave.zip darwinBinaries/
+          codesign --deep --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} bin/Clave.app/Contents/MacOS/Clave
+          codesign --deep --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} bin/Clave.app
+          npm install --global create-dmg
+          create-dmg bin/Clave.app --dmg-title Clave-${{ github.event.release.tag_name }}
+          for dmg in *.dmg; do
+            mv "$dmg" "darwinBinaries/Clave-${{ github.event.release.tag_name }}--arm64.dmg"
+            echo "arm64DMGPath=darwinBinaries/Clave-${{ github.event.release.tag_name }}--arm64.dmg" >> $GITHUB_ENV
+            codesign --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} ${{ env.arm64DMGPath }}
+          done
           ls -alh bin
+
+      - name: Notarize Release Binaries
+        run: |
+          xcrun notarytool submit ${{ env.arm64DMGPath }} --apple-id ${{ secrets.MACOS_SIGNING_GON_USERNAME }} --team-id ${{secrets.APPLE_DEVELOPER_TEAM_ID}} --password ${{ secrets.MACOS_SIGNING_GON_APPLICATION_PASSWORD }} --verbose --wait 
+          xcrun stapler staple ${{ env.arm64DMGPath }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -70,9 +88,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
-          asset_path: darwinBinaries/Clave.zip
-          asset_name: Clave-macos.zip
-          asset_content_type: application/zip
+          asset_path: ${{ env.arm64DMGPath }}
+          asset_name: Clave-${{ github.event.release.tag_name }}--arm64.dmg
+          asset_content_type: application/x-apple-diskimage
 
   build-windows:
     name: Build Windows
