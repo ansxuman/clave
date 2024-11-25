@@ -62,6 +62,7 @@ jobs:
           wails3 package
           zip -r Clave.zip bin/Clave.app
           mv Clave.zip darwinBinaries/
+          ls -alh bin
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -121,6 +122,7 @@ jobs:
           wails3 doctor
           wails3 task common:update:build-assets
           wails3 package
+          dir /alh /b /a-d bin
           Compress-Archive -Path bin\Clave.exe -DestinationPath windowsBinaries\Clave.zip
 
       - name: Upload Release Asset
@@ -186,6 +188,7 @@ jobs:
           wails3 package
           zip -r Clave.zip bin/Clave
           mv Clave.zip linuxBinaries/
+          ls -alh bin
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
