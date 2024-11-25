@@ -90,13 +90,13 @@ jobs:
 
       - name: Update Version in Config
         run: |
-          VERSION="v${{ github.event.inputs.version }}"
+          VERSION="${{ github.event.inputs.version }}" # Remove the leading 'v' from the version input
           
           # Update AppVersion in CommmonVariables.go
-          sed -i "s/AppVersion = .*/const AppVersion = \"$VERSION\"/" constants/CommmonVariables.go
+          sed -i "s/const AppVersion = .*/const AppVersion = \"$VERSION\"/" constants/CommmonVariables.go
           git add constants/CommmonVariables.go
           
-          # Update version in config.yml
+          # Update version in config.yml (only in the info section)
           sed -i "s/version: .*/version: \"$VERSION\"/" build/config.yml
           git add build/config.yml
           
