@@ -70,6 +70,7 @@ jobs:
           
           # Store signing identity in a variable with proper quoting
           SIGN_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
+          VERSION="${{ github.event.release.tag_name }}"
           
           # Sign the binary
           codesign --deep --force --verbose --options=runtime --sign "$SIGN_IDENTITY" bin/Clave.app/Contents/MacOS/Clave
@@ -79,16 +80,16 @@ jobs:
           
           # Create DMG
           npm install --global create-dmg
-          create-dmg bin/Clave.app --dmg-title "Clave-${{ github.event.release.tag_name }}"
+          create-dmg bin/Clave.app --dmg-title "Clave-${VERSION}"
           
           # Process and sign DMG
-          cd bin  # Change to bin directory where DMG is created
-          for dmg in *.dmg; do
-            mv "$dmg" "../darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg"
-            echo "arm64DMGPath=darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg" >> $GITHUB_ENV
-          done
+          cd bin
+          # Use the actual filename format that create-dmg generates
+          CLEAN_VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          mv "Clave ${CLEAN_VERSION}.dmg" "../darwinBinaries/Clave-${VERSION}-arm64.dmg"
+          echo "arm64DMGPath=darwinBinaries/Clave-${VERSION}-arm64.dmg" >> $GITHUB_ENV
           
-          cd ..  # Go back to the root directory
+          cd ..
           ls -alh darwinBinaries
 
       - name: Notarize Release Binaries
