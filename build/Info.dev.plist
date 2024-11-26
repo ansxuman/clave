@@ -10,11 +10,11 @@
         <key>CFBundleIdentifier</key>
         <string>com.ansxuman.clave</string>
         <key>CFBundleVersion</key>
-        <string>0.1.0</string>
+        <string>0.0.12</string>
         <key>CFBundleGetInfoString</key>
         <string>Secure Authentication at Your Fingertips</string>
         <key>CFBundleShortVersionString</key>
-        <string>0.1.0</string>
+        <string>0.0.12</string>
         <key>CFBundleIconFile</key>
         <string>icons</string>
         <key>LSMinimumSystemVersion</key>

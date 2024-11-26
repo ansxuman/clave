@@ -6,7 +6,7 @@ require (
 	github.com/ansxuman/go-touchid v0.0.0-20241021115423-60941306d4c3
 	github.com/dgraph-io/badger/v4 v4.4.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.7
+	github.com/wailsa../github/wails/v3 v3.0.0-alpha.7
 	golang.org/x/crypto v0.28.0
 )
 
@@ -64,4 +64,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
-replace github.com/wailsapp/wails/v3 => ../wails/v3
+replace github.com/wailsa../github/wails/v3 => ../github/wails/v3
