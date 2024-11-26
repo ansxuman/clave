@@ -68,7 +68,6 @@ jobs:
         run: |
           mkdir -p darwinBinaries
           wails3 doctor
-          wails3 task common:update:build-assets
           wails3 package
           
           # Store signing identity and version in variables
@@ -159,7 +158,6 @@ jobs:
         run: |
           mkdir windowsBinaries
           wails3 doctor
-          wails3 task common:update:build-assets
           wails3 package
 
           $VERSION="${{ github.event.release.tag_name || inputs.version }}"
@@ -225,7 +223,6 @@ jobs:
         run: |
           mkdir -p linuxBinaries
           wails3 doctor
-          wails3 task common:update:build-assets
           wails3 package
           
           VERSION="${{ github.event.release.tag_name || inputs.version }}"

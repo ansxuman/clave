@@ -94,15 +94,17 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           CLEAN_VERSION="${VERSION#v}"
           
+          # Update build assets
+          wails3 task common:update:build-assets
+
           # Update AppVersion in CommmonVariables.go
           sed -i "s/const AppVersion = .*/const AppVersion = \"$CLEAN_VERSION\"/" constants/CommmonVariables.go
-          git add constants/CommmonVariables.go
-          
+      
           # Update version in config.yml (specifically in the info section)
           sed -i "/^info:/,/^[^ ]/ s/  version: .*/  version: \"$CLEAN_VERSION\"/" build/config.yml
-          git add build/config.yml
-          
+        
           # Commit changes
+          git add .
           git commit -m "Update AppVersion to $CLEAN_VERSION in CommmonVariables.go and version in config.yml"
           git push origin main
 
