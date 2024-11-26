@@ -76,15 +76,27 @@ jobs:
           wails3 doctor
           wails3 task common:update:build-assets
           wails3 package
-          codesign --deep --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} bin/Clave.app/Contents/MacOS/Clave
-          codesign --deep --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} bin/Clave.app
+          
+          # Store signing identity in a variable with proper quoting
+          SIGN_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
+          
+          # Sign the binary
+          codesign --deep --force --verbose --options=runtime --sign "$SIGN_IDENTITY" bin/Clave.app/Contents/MacOS/Clave
+          
+          # Sign the app bundle
+          codesign --deep --force --verbose --options=runtime --sign "$SIGN_IDENTITY" bin/Clave.app
+          
+          # Create DMG
           npm install --global create-dmg
-          create-dmg bin/Clave.app --dmg-title Clave-${{ github.event.release.tag_name }}
+          create-dmg bin/Clave.app --dmg-title "Clave-${{ github.event.release.tag_name }}"
+          
+          # Process and sign DMG
           for dmg in *.dmg; do
-            mv "$dmg" "darwinBinaries/Clave-${{ github.event.release.tag_name }}--arm64.dmg"
-            echo "arm64DMGPath=darwinBinaries/Clave-${{ github.event.release.tag_name }}--arm64.dmg" >> $GITHUB_ENV
-            codesign --force --verbose --options=runtime --sign ${{ secrets.APPLE_SIGNING_IDENTITY}} ${{ env.arm64DMGPath }}
+            mv "$dmg" "darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg"
+            echo "arm64DMGPath=darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg" >> $GITHUB_ENV
+            codesign --force --verbose --options=runtime --sign "$SIGN_IDENTITY" "${{ env.arm64DMGPath }}"
           done
+          
           ls -alh bin
 
       - name: Notarize Release Binaries
@@ -99,7 +111,7 @@ jobs:
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: ${{ env.arm64DMGPath }}
-          asset_name: Clave-${{ github.event.release.tag_name }}--arm64.dmg
+          asset_name: Clave-${{ github.event.release.tag_name }}-arm64.dmg
           asset_content_type: application/x-apple-diskimage
 
   build-windows:
@@ -145,13 +157,15 @@ jobs:
           (Get-Content go.mod) -replace '../wails/v3', '../github/wails/v3' | Set-Content go.mod
 
       - name: Build Release Binaries
+        shell: pwsh
         run: |
           mkdir windowsBinaries
           wails3 doctor
           wails3 task common:update:build-assets
           wails3 package
-          dir /alh /b /a-d bin
-          Compress-Archive -Path bin\Clave.exe -DestinationPath windowsBinaries\Clave.zip
+
+          Move-Item -Path "bin\Clave-amd64-installer.exe" -Destination "windowsBinaries\Clave-Setup-${{ github.event.release.tag_name }}-x64.exe"
+          echo "WINDOWS_INSTALLER_PATH=windowsBinaries/Clave-Setup-${{ github.event.release.tag_name }}-x64.exe" >> $env:GITHUB_ENV
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -159,9 +173,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
-          asset_path: windowsBinaries/Clave.zip
-          asset_name: Clave-windows.zip
-          asset_content_type: application/zip
+          asset_path: ${{ env.WINDOWS_INSTALLER_PATH }}
+          asset_name: Clave-Setup-${{ github.event.release.tag_name }}-x64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
 
   build-linux:
     name: Build Linux
@@ -214,9 +228,11 @@ jobs:
           wails3 doctor
           wails3 task common:update:build-assets
           wails3 package
-          zip -r Clave.zip bin/Clave
-          mv Clave.zip linuxBinaries/
-          ls -alh bin
+          
+          mv bin/clave-x86_64.AppImage "linuxBinaries/clave_${{ github.event.release.tag_name }}_amd64.AppImage"
+          echo "LINUX_APP_PATH=linuxBinaries/clave_${{ github.event.release.tag_name }}_amd64.AppImage" >> $GITHUB_ENV
+          
+          ls -alh linuxBinaries
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -224,6 +240,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
-          asset_path: linuxBinaries/Clave.zip
-          asset_name: Clave-linux.zip
-          asset_content_type: application/zip
+          asset_path: ${{ env.LINUX_APP_PATH }}
+          asset_name: clave_${{ github.event.release.tag_name }}_amd64.AppImage
+          asset_content_type: application/x-executable
