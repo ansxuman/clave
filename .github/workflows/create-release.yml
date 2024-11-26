@@ -88,6 +88,21 @@ jobs:
           git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
           git push origin "v${{ github.event.inputs.version }}"
 
+      - name: Setup Wails Dependencies
+        run: |
+          mkdir -p ../github
+          cd ../github
+          git clone https://github.com/wailsapp/wails.git
+          cd wails
+          git checkout v3-alpha
+          cd v3/cmd/wails3
+          go install
+          cd ../../../..
+
+      - name: Update go.mod
+        run: |
+          sed -i '' 's|../wails/v3|../github/wails/v3|g' go.mod
+
       - name: Update Version in Config
         run: |
           # Strip the 'v' prefix if it exists
