@@ -17,6 +17,7 @@ jobs:
   build-macos:
     name: Build macOS
     runs-on: macos-latest
+    environment: Prod
     steps:
       - uses: actions/checkout@v4
         with:
