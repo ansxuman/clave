@@ -12,6 +12,9 @@ on:
       release_url:
         description: 'Release upload URL'
         required: true
+      version:
+        description: 'Version tag'
+        required: true
 
 jobs:
   build-macos:
@@ -21,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.version }}
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -68,9 +71,11 @@ jobs:
           wails3 task common:update:build-assets
           wails3 package
           
-          # Store signing identity in a variable with proper quoting
+          # Store signing identity and version in variables
           SIGN_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${{ github.event.release.tag_name || inputs.version }}"
+          
+          echo "Using version: $VERSION"
           
           # Sign the binary
           codesign --deep --force --verbose --options=runtime --sign "$SIGN_IDENTITY" bin/Clave.app/Contents/MacOS/Clave

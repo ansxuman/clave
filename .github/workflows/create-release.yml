@@ -134,6 +134,7 @@ jobs:
               workflow_id: 'build-release.yml',
               ref: 'main',
               inputs: {
-                release_url: '${{ steps.create-release.outputs.upload_url }}'
+                release_url: '${{ steps.create-release.outputs.upload_url }}',
+                version: 'v${{ github.event.inputs.version }}'
               }
             })
