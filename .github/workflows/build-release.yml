@@ -55,15 +55,6 @@ jobs:
         run: |
           sed -i '' 's|../wails/v3|../github/wails/v3|g' go.mod
 
-      - name: Debug Secrets and Base64
-        run: |
-          echo "APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 Length: ${#APPLE_DEVELOPER_CERTIFICATE_P12_BASE64}"
-          echo "APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${#APPLE_DEVELOPER_CERTIFICATE_PASSWORD}"
-        env:
-          APPLE_DEVELOPER_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
-          APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
-
-
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v3
         with:
@@ -91,13 +82,14 @@ jobs:
           create-dmg bin/Clave.app --dmg-title "Clave-${{ github.event.release.tag_name }}"
           
           # Process and sign DMG
+          cd bin  # Change to bin directory where DMG is created
           for dmg in *.dmg; do
-            mv "$dmg" "darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg"
+            mv "$dmg" "../darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg"
             echo "arm64DMGPath=darwinBinaries/Clave-${{ github.event.release.tag_name }}-arm64.dmg" >> $GITHUB_ENV
-            codesign --force --verbose --options=runtime --sign "$SIGN_IDENTITY" "${{ env.arm64DMGPath }}"
           done
           
-          ls -alh bin
+          cd ..  # Go back to the root directory
+          ls -alh darwinBinaries
 
       - name: Notarize Release Binaries
         run: |
