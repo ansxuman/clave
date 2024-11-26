@@ -118,7 +118,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.version }}
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -162,8 +162,9 @@ jobs:
           wails3 task common:update:build-assets
           wails3 package
 
-          Move-Item -Path "bin\Clave-amd64-installer.exe" -Destination "windowsBinaries\Clave-Setup-${{ github.event.release.tag_name }}-x64.exe"
-          echo "WINDOWS_INSTALLER_PATH=windowsBinaries/Clave-Setup-${{ github.event.release.tag_name }}-x64.exe" >> $env:GITHUB_ENV
+          $VERSION="${{ github.event.release.tag_name || inputs.version }}"
+          Move-Item -Path "bin\Clave-amd64-installer.exe" -Destination "windowsBinaries\Clave-Setup-${VERSION}-x64.exe"
+          echo "WINDOWS_INSTALLER_PATH=windowsBinaries/Clave-Setup-${VERSION}-x64.exe" >> $env:GITHUB_ENV
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -172,7 +173,7 @@ jobs:
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: ${{ env.WINDOWS_INSTALLER_PATH }}
-          asset_name: Clave-Setup-${{ github.event.release.tag_name }}-x64.exe
+          asset_name: Clave-Setup-${{ github.event.release.tag_name || inputs.version }}-x64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
   build-linux:
@@ -181,7 +182,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.version }}
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -227,8 +228,9 @@ jobs:
           wails3 task common:update:build-assets
           wails3 package
           
-          mv bin/clave-x86_64.AppImage "linuxBinaries/clave_${{ github.event.release.tag_name }}_amd64.AppImage"
-          echo "LINUX_APP_PATH=linuxBinaries/clave_${{ github.event.release.tag_name }}_amd64.AppImage" >> $GITHUB_ENV
+          VERSION="${{ github.event.release.tag_name || inputs.version }}"
+          mv bin/clave-x86_64.AppImage "linuxBinaries/clave_${VERSION}_amd64.AppImage"
+          echo "LINUX_APP_PATH=linuxBinaries/clave_${VERSION}_amd64.AppImage" >> $GITHUB_ENV
           
           ls -alh linuxBinaries
 
@@ -239,5 +241,5 @@ jobs:
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
           asset_path: ${{ env.LINUX_APP_PATH }}
-          asset_name: clave_${{ github.event.release.tag_name }}_amd64.AppImage
+          asset_name: clave_${{ github.event.release.tag_name || inputs.version }}_amd64.AppImage
           asset_content_type: application/x-executable
