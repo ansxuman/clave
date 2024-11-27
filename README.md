@@ -13,8 +13,8 @@
 
 ## **Features**
 
-- **Three Easy Ways to Add Profiles**:  
-  Add your accounts effortlessly through manual entry, drag & drop QR codes, or by importing QR code images.
+- **Easy Profile Addition**:  
+  Add accounts via manual entry or QR code image import.
 
 - **Multi-Factor Authentication (MFA)**:  
   Protects access to your TOTP codes with an additional layer of security using a **PIN** or **Touch ID** (macOS only).
@@ -27,6 +27,9 @@
 
 - **Cross-Platform**:  
   Available for **macOS**, **Windows**, and **Linux** .
+
+- **Import & Export**:  
+  Easily backup and restore your profiles.
 
 ---
 
