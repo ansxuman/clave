@@ -68,7 +68,12 @@ jobs:
         run: |
           mkdir -p darwinBinaries
           wails3 doctor
-          wails3 package
+
+          # Update build assets
+          wails3 task common:update:build-assets
+
+          # Build the app package
+          task package
           
           # Store signing identity and version in variables
           SIGN_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
@@ -88,9 +93,12 @@ jobs:
           create-dmg Clave.app --dmg-title "Clave-${VERSION}"
           
           # Process and sign DMG
-          # Use the actual filename format that create-dmg generates
-          CLEAN_VERSION="${VERSION#v}"  # Remove 'v' prefix if present
-          mv "Clave ${CLEAN_VERSION}.dmg" "../darwinBinaries/Clave-${VERSION}-arm64.dmg"
+          # Move any .dmg file found to darwinBinaries with the correct name
+          for dmg in *.dmg; do
+            mv "$dmg" "../darwinBinaries/Clave-${VERSION}-arm64.dmg"
+            break
+          done
+          
           echo "arm64DMGPath=darwinBinaries/Clave-${VERSION}-arm64.dmg" >> $GITHUB_ENV
           
           cd ..
@@ -158,7 +166,12 @@ jobs:
   #       run: |
   #         mkdir windowsBinaries
   #         wails3 doctor
-  #         wails3 package
+
+  #         # Update build assets
+  #         wails3 task common:update:build-assets
+
+  #         # Build the app package
+  #         task package
 
   #         $VERSION="${{ github.event.release.tag_name || inputs.version }}"
   #         Move-Item -Path "bin\Clave-amd64-installer.exe" -Destination "windowsBinaries\Clave-Setup-${VERSION}-x64.exe"
@@ -223,7 +236,12 @@ jobs:
   #       run: |
   #         mkdir -p linuxBinaries
   #         wails3 doctor
-  #         wails3 package
+
+  #         # Update build assets
+  #         wails3 task common:update:build-assets
+
+  #         # Build the app package
+  #         task package
           
   #         VERSION="${{ github.event.release.tag_name || inputs.version }}"
   #         mv bin/clave-x86_64.AppImage "linuxBinaries/clave_${VERSION}_amd64.AppImage"
