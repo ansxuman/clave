@@ -56,7 +56,7 @@ jobs:
 
       - name: Update go.mod
         run: |
-          sed -i '' 's|../wails/v3|../github/wails/v3|g' go.mod
+          sed -i '' 's|=> ../wails/v3|=> ../github/wails/v3|g' go.mod
 
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v3
@@ -151,7 +151,7 @@ jobs:
       - name: Update go.mod
         shell: pwsh
         run: |
-          (Get-Content go.mod) -replace '../wails/v3', '../github/wails/v3' | Set-Content go.mod
+          (Get-Content go.mod) -replace 'replace.*=> ../wails/v3', 'replace github.com/wailsapp/wails/v3 => ../github/wails/v3' | Set-Content go.mod
 
       - name: Build Release Binaries
         shell: pwsh
@@ -217,7 +217,7 @@ jobs:
 
       - name: Update go.mod
         run: |
-          sed -i 's|../wails/v3|../github/wails/v3|g' go.mod
+          sed -i 's|=> ../wails/v3|=> ../github/wails/v3|g' go.mod
 
       - name: Build Release Binaries
         run: |

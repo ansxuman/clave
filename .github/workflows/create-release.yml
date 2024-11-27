@@ -130,15 +130,15 @@ jobs:
           # Strip the 'v' prefix if it exists
           VERSION="${{ github.event.inputs.version }}"
           CLEAN_VERSION="${VERSION#v}"
-          
-          # Update build assets
-          wails3 task common:update:build-assets
 
           # Update AppVersion in CommmonVariables.go
           sed -i "s/const AppVersion = .*/const AppVersion = \"$CLEAN_VERSION\"/" constants/CommmonVariables.go
-      
+
           # Update version in config.yml (specifically in the info section)
           sed -i "/^info:/,/^[^ ]/ s/  version: .*/  version: \"$CLEAN_VERSION\"/" build/config.yml
+
+          # Update build assets
+          wails3 task common:update:build-assets
         
           # Commit changes excluding go.mod and go.sum
           git add .
