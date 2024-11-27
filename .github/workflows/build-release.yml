@@ -84,10 +84,10 @@ jobs:
           
           # Create DMG
           npm install --global create-dmg
-          create-dmg bin/Clave.app --dmg-title "Clave-${VERSION}"
+          cd bin
+          create-dmg Clave.app --dmg-title "Clave-${VERSION}"
           
           # Process and sign DMG
-          cd bin
           # Use the actual filename format that create-dmg generates
           CLEAN_VERSION="${VERSION#v}"  # Remove 'v' prefix if present
           mv "Clave ${CLEAN_VERSION}.dmg" "../darwinBinaries/Clave-${VERSION}-arm64.dmg"
