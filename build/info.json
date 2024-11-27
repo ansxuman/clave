@@ -1,10 +1,10 @@
 {
 	"fixed": {
-		"file_version": "0.0.22"
+		"file_version": "0.0.21"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.0.22",
+			"ProductVersion": "0.0.21",
 			"CompanyName": "Clave",
 			"FileDescription": "Secure Authentication at Your Fingertips",
 			"LegalCopyright": "© 2024 Clave. Licensed under MIT License.",
