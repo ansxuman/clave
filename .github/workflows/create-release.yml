@@ -98,13 +98,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create and Push Tag
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
-          git push origin "v${{ github.event.inputs.version }}"
-
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -145,6 +138,13 @@ jobs:
           git reset go.mod go.sum
           git commit -m "Update AppVersion to $CLEAN_VERSION in CommmonVariables.go and version in config.yml"
           git push origin main
+
+      - name: Create and Push Tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
+          git push origin "v${{ github.event.inputs.version }}"
 
       - name: Create Release
         id: create-release
