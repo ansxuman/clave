@@ -5,7 +5,7 @@
         FileUp,
         KeyRound} from 'lucide-svelte';
     import * as wails from '@wailsio/runtime';
-    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile, AddManualProfile } from '../../../../bindings/clave/backend/app';
+    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile, AddManualProfile, GetAppVersion } from '../../../../bindings/clave/backend/app';
     import type { TOTPProfile, MenuOption, TOTPEvent } from '../../types/totp';
     import { generateTOTP } from '../../utils/totp';
     import About from '../about/About.svelte';
@@ -23,6 +23,9 @@
     let currentView = 'main';
     let showConfirmModal = false;
     let profileToDelete: string | null = null;
+    let version = "";
+    let latestVersion = "";
+    let hasUpdate = false;
 
     const w = wails.Window;
 
@@ -57,8 +60,37 @@
         }
     ];
 
+    async function checkLatestVersion() {
+        try {
+            const response = await fetch("https://api.github.com/repos/ansxuman/clave/releases/latest");
+            const data = await response.json();
+
+            const versionMatch = data.tag_name.match(/\d+\.\d+\.\d+/);
+            if (!versionMatch) {
+                console.warn("Unexpected version format in latest release:", data.tag_name);
+                return;
+            }
+
+            latestVersion = versionMatch[0];
+
+            const currentVersionMatch = version.match(/\d+\.\d+\.\d+/);
+            if (!currentVersionMatch) {
+                console.warn("Unexpected current version format:", version);
+                return;
+            }
+
+            hasUpdate = currentVersionMatch[0] !== latestVersion;
+        } catch (error) {
+            console.error("Failed to check latest version:", error);
+            latestVersion = "";
+            hasUpdate = false;
+        }
+    }
+
     onMount(async () => {
         try {
+            version = await GetAppVersion();
+            await checkLatestVersion();
             await initializeApp();
         } catch (err) {
             const error = err instanceof Error ? err.message : 'Failed to initialize app';
@@ -186,6 +218,10 @@
             console.log(err)
         }
     }
+
+    function handleUpdateClick() {
+        wails.Browser.OpenURL("https://github.com/ansxuman/clave/releases/latest");
+    }
 </script>
 
 {#if currentView === 'main'}
@@ -206,6 +242,9 @@
                     on:click={() => showMenu = !showMenu}
                 >
                     <MoreVertical size={18} />
+                    {#if hasUpdate}
+                        <span class="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-red-400"></span>
+                    {/if}
                 </button>
                 
                 {#if showMenu}
@@ -224,6 +263,14 @@
                                 {item.label}
                             </button>
                         {/each}
+                        {#if hasUpdate}
+                            <button
+                                class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                                on:click={handleUpdateClick}
+                            >
+                                Update to v{latestVersion}
+                            </button>
+                        {/if}
                     </div>
                 {/if}
             </div>
