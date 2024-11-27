@@ -123,7 +123,7 @@ jobs:
 
       - name: Update go.mod
         run: |
-          sed -i 's|../wails/v3|../github/wails/v3|g' go.mod
+          sed -i '' '/replace.*wails\/v3/c\replace github.com/wailsapp/wails/v3 => ../github/wails/v3' go.mod
 
       - name: Update Version in Config
         run: |
@@ -140,8 +140,9 @@ jobs:
           # Update version in config.yml (specifically in the info section)
           sed -i "/^info:/,/^[^ ]/ s/  version: .*/  version: \"$CLEAN_VERSION\"/" build/config.yml
         
-          # Commit changes
+          # Commit changes excluding go.mod and go.sum
           git add .
+          git reset go.mod go.sum
           git commit -m "Update AppVersion to $CLEAN_VERSION in CommmonVariables.go and version in config.yml"
           git push origin main
 
