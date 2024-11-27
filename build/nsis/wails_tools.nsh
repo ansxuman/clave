@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Clave"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.0.12"
+    !define INFO_PRODUCTVERSION "0.0.17"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "© 2024 Clave. Licensed under MIT License."
