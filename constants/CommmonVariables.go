@@ -9,4 +9,4 @@ var Stage = "dev"
 
 const CommonDatabasePassword string = "s#6Y5$wdqwd*TVC3!tu@_hHk#5"
 const ApplicationName = "Clave"
-const AppVersion = "0.0.19"
+const AppVersion = "0.0.20"
