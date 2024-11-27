@@ -120,6 +120,10 @@ jobs:
 
       - name: Update Version in Config
         run: |
+          # Configure git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
           # Strip the 'v' prefix if it exists
           VERSION="${{ github.event.inputs.version }}"
           CLEAN_VERSION="${VERSION#v}"
@@ -136,13 +140,11 @@ jobs:
           # Commit changes excluding go.mod and go.sum
           git add .
           git reset go.mod go.sum
-          git commit -m "Update AppVersion to $CLEAN_VERSION in CommmonVariables.go and version in config.yml"
+          git commit -m "chore: update version to $CLEAN_VERSION"
           git push origin main
 
       - name: Create and Push Tag
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
           git push origin "v${{ github.event.inputs.version }}"
 
