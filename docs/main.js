@@ -50,10 +50,10 @@ async function updateVersion() {
 
 function updateDownloadLinks(versionNumber) {
   const platformUrls = {
-    'mac-intel': `Clave-${versionNumber}-x64.dmg`,
-    'mac-silicon': `Clave-${versionNumber}-arm64.dmg`,
-    'windows': `Clave-Setup-${versionNumber}-x64.exe`,
-    'linux': `clave_${versionNumber}_amd64.deb`,
+    'mac-intel': `Clave-v${versionNumber}-x64.dmg`,
+    'mac-silicon': `Clave-v${versionNumber}-arm64.dmg`,
+    'windows': `Clave-Setup-v${versionNumber}-x64.exe`,
+    'linuxAppImage': `clave_v${versionNumber}_amd64.AppImage`,
   };
 
   document.querySelectorAll('.download-button').forEach(link => {
