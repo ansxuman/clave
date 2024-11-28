@@ -95,8 +95,10 @@ func main() {
 		})
 
 		q.AddButton("No").SetAsDefault().OnClick(func() {
+
 		})
 
+		q.Show()
 	})
 
 	systemTray.SetMenu(myMenu)
