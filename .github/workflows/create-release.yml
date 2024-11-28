@@ -107,7 +107,7 @@ jobs:
         run: |
           mkdir -p ../github
           cd ../github
-          git clone https://github.com/wailsapp/wails.git
+          git clone https://github.com/ansxuman/wails.git
           cd wails
           git checkout v3-alpha
           cd v3/cmd/wails3

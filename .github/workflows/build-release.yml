@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p ../github
           cd ../github
-          git clone https://github.com/wailsapp/wails.git
+          git clone https://github.com/ansxuman/wails.git
           cd wails
           git checkout v3-alpha
           cd v3/cmd/wails3
@@ -74,7 +74,7 @@ jobs:
           wails3 task common:update:build-assets
 
           # Build the app package
-          task package
+          task darwin:package:universal
           
           # Store signing identity and version in variables
           SIGN_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
@@ -96,19 +96,19 @@ jobs:
           # Process and sign DMG
           # Move any .dmg file found to darwinBinaries with the correct name
           for dmg in *.dmg; do
-            mv "$dmg" "../darwinBinaries/Clave-${VERSION}-arm64.dmg"
+            mv "$dmg" "../darwinBinaries/Clave-${VERSION}-universal.dmg"
             break
           done
           
-          echo "arm64DMGPath=darwinBinaries/Clave-${VERSION}-arm64.dmg" >> $GITHUB_ENV
+          echo "universalDMGPath=darwinBinaries/Clave-${VERSION}-universal.dmg" >> $GITHUB_ENV
           
           cd ..
           ls -alh darwinBinaries
 
       - name: Notarize Release Binaries
         run: |
-          xcrun notarytool submit ${{ env.arm64DMGPath }} --apple-id ${{ secrets.MACOS_SIGNING_GON_USERNAME }} --team-id ${{secrets.APPLE_DEVELOPER_TEAM_ID}} --password ${{ secrets.MACOS_SIGNING_GON_APPLICATION_PASSWORD }} --verbose --wait 
-          xcrun stapler staple ${{ env.arm64DMGPath }}
+          xcrun notarytool submit ${{ env.universalDMGPath }} --apple-id ${{ secrets.MACOS_SIGNING_GON_USERNAME }} --team-id ${{secrets.APPLE_DEVELOPER_TEAM_ID}} --password ${{ secrets.MACOS_SIGNING_GON_APPLICATION_PASSWORD }} --verbose --wait 
+          xcrun stapler staple ${{ env.universalDMGPath }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -116,8 +116,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
-          asset_path: ${{ env.arm64DMGPath }}
-          asset_name: Clave-${{ github.event.release.tag_name || inputs.version }}-arm64.dmg
+          asset_path: ${{ env.universalDMGPath }}
+          asset_name: Clave-${{ github.event.release.tag_name || inputs.version }}-universal.dmg
           asset_content_type: application/x-apple-diskimage
 
   build-windows:
@@ -150,7 +150,7 @@ jobs:
         run: |
           mkdir ..\github
           cd ..\github
-          git clone https://github.com/wailsapp/wails.git
+          git clone https://github.com/ansxuman/wails.git
           cd wails
           git checkout v3-alpha
           cd v3\cmd\wails3
@@ -222,7 +222,7 @@ jobs:
         run: |
           mkdir -p ../github
           cd ../github
-          git clone https://github.com/wailsapp/wails.git
+          git clone https://github.com/ansxuman/wails.git
           cd wails
           git checkout v3-alpha
           cd v3/cmd/wails3
@@ -235,7 +235,7 @@ jobs:
 
       - name: Build Release Binaries
         run: |
-          mkdir -p linuxBinaries
+          mkdir -p linuxAppImage
           wails3 doctor
 
           # Update build assets
@@ -245,12 +245,52 @@ jobs:
           task package
           
           VERSION="${{ github.event.release.tag_name || inputs.version }}"
-          mv bin/clave-x86_64.AppImage "linuxBinaries/clave_${VERSION}_amd64.AppImage"
-          echo "LINUX_APP_PATH=linuxBinaries/clave_${VERSION}_amd64.AppImage" >> $GITHUB_ENV
+          mv bin/clave-x86_64.AppImage "linuxAppImage/clave_${VERSION}_amd64.AppImage"
+          echo "LINUX_APP_PATH=linuxAppImage/clave_${VERSION}_amd64.AppImage" >> $GITHUB_ENV
           
-          ls -alh linuxBinaries
+          ls -alh linuxAppImage
 
-      - name: Upload Release Asset
+      - name: Build deb using dpkg
+        run: |
+          VERSION="${{ github.event.release.tag_name || inputs.version }}"
+          CLEAN_VERSION="${VERSION#v}"
+          mkdir linuxDeb
+          mkdir build_deb
+          cd build_deb
+          mkdir -p clave_${VERSION}_amd64/{DEBIAN,opt,usr,var}
+          cat > clave_${VERSION}_amd64/DEBIAN/control <<- EOF
+          Package: clave
+          Version: $CLEAN_VERSION
+          Section: net
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Clave <ansxuman@gmail.com>
+          Description: A lightweight cross-platform desktop authenticator app.
+          EOF
+
+          mkdir -p clave_${VERSION}_amd64/usr/{bin,share}
+          cp ../bin/Clave clave_${VERSION}_amd64/usr/bin/clave
+          chmod +x clave_${VERSION}_amd64/usr/bin/clave
+          mkdir clave_${VERSION}_amd64/usr/share/{applications,icons}
+          cat > clave_${VERSION}_amd64/usr/share/applications/clave.desktop <<- EOF
+          [Desktop Entry]
+          Type=Application
+          Name=Clave
+          Exec=/usr/bin/clave
+          Icon=/usr/share/icons/appicon.png
+          Categories=Utility;
+          Terminal=false
+          EOF
+          cp ../build/appicon.png clave_${VERSION}_amd64/usr/share/icons
+          dpkg-deb --build clave_${VERSION}_amd64
+          ls -alh
+          mv *.deb ../linuxDeb/clave_${VERSION}_amd64.deb
+          cd ..
+          echo "LINUX_DEB_PATH=linuxDeb/clave_${VERSION}_amd64.deb" >> $GITHUB_ENV
+          ls -alh linuxDeb/
+
+
+      - name: Upload AppImage to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -259,3 +299,13 @@ jobs:
           asset_path: ${{ env.LINUX_APP_PATH }}
           asset_name: clave_${{ github.event.release.tag_name || inputs.version }}_amd64.AppImage
           asset_content_type: application/x-executable
+
+      - name: Upload deb to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event_name == 'workflow_dispatch' && inputs.release_url || github.event.release.upload_url }}
+          asset_path: ${{ env.LINUX_DEB_PATH }}
+          asset_name: clave_${{ github.event.release.tag_name || inputs.version }}_amd64.deb
+          asset_content_type: application/x-debian-package
