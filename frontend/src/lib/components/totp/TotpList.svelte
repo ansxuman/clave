@@ -144,12 +144,7 @@
             return;
         }
 
-        if (Array.isArray(event.data[0])) {
-            profiles = event.data[0];
-        } else {
-            profiles = Array.isArray(event.data) ? event.data : [event.data];
-        }
-
+        profiles = (Array.isArray(event.data[0]) ? event.data[0] : event.data) as TOTPProfile[];
         updateProfiles();
     }
 

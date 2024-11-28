@@ -4,4 +4,4 @@ import (
 	"os"
 )
 
-var ProgramData string = os.Getenv("USERPROFILE")
+var ProgramData = os.Getenv("LOCALAPPDATA")

@@ -1,6 +1,9 @@
 package constants
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 var homeDir, _ = os.UserHomeDir()
-var ProgramData = homeDir
+var ProgramData = filepath.Join(homeDir, "Library", "Application Support")

@@ -2,7 +2,8 @@ package constants
 
 import (
 	"os"
+	"path/filepath"
 )
 
 var homeDir, _ = os.UserHomeDir()
-var ProgramData = homeDir
+var ProgramData = filepath.Join(homeDir, ".local", "share")

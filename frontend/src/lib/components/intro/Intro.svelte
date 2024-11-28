@@ -20,11 +20,11 @@
             <h3 class="font-semibold text-sm mb-2">1. Manual Entry</h3>
             <p class="text-xs text-gray-400">Enter your secret key and issuer details manually.</p>
         {:else if currentStep === 2}
-            <h3 class="font-semibold text-sm mb-2">2. Drag & Drop QR (Coming Soon)</h3>
-            <p class="text-xs text-gray-400">Simply drag and drop a QR code image to add your profile.</p>
-        {:else}
-            <h3 class="font-semibold text-sm mb-2">3. Import QR Code</h3>
+            <h3 class="font-semibold text-sm mb-2">2. Import QR Code</h3>
             <p class="text-xs text-gray-400">Import a QR code image from your device to set up your profile.</p>
+        {:else}
+            <h3 class="font-semibold text-sm mb-2">3. Drag & Drop QR (Coming Soon)</h3>
+            <p class="text-xs text-gray-400">Simply drag and drop a QR code image to add your profile.</p>
         {/if}
     </div>
     
