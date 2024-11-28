@@ -26,6 +26,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preload" href="appicon.png" as="image">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
@@ -153,37 +154,41 @@
     </section>
 
     <section id="download" class="downloads">
-      <h2 class="section-title">Download Clave </h2>
+      <h2 class="section-title">Download Clave</h2>
       <div class="download-container">
         <p class="download-subtitle">Choose your platform</p>
         
         <div class="download-grid">
           <!-- macOS -->
           <div class="download-card">
-            <h3>macOS</h3>
+            <h3><i class="fab fa-apple"></i> macOS</h3>
             <div class="download-options">
-              <a href="#" class="download-button" data-platform="mac-intel">
-                <span>Intel Chip</span>
-              </a>
-              <a href="#" class="download-button" data-platform="mac-silicon">
-                <span>Apple Silicon</span>
+              <a href="#" class="download-button" data-platform="mac-universal">
+                <i class="fas fa-download"></i>
+                <span>Universal</span>
               </a>
             </div>
           </div>
 
           <!-- Windows -->
           <div class="download-card">
-            <h3>Windows</h3>
+            <h3><i class="fab fa-windows"></i> Windows</h3>
             <a href="#" class="download-button" data-platform="windows">
+              <i class="fas fa-download"></i>
               <span>Windows 10/11</span>
             </a>
           </div>
 
           <!-- Linux -->
           <div class="download-card">
-            <h3>Linux</h3>
+            <h3><i class="fab fa-linux"></i> Linux</h3>
             <a href="#" class="download-button" data-platform="linuxAppImage">
+              <i class="fas fa-cube"></i>
               <span>AppImage</span>
+            </a>
+            <a href="#" class="download-button" data-platform="linuxDeb">
+              <i class="fas fa-archive"></i>
+              <span>Debian</span>
             </a>
           </div>
         </div>
@@ -259,6 +264,28 @@
 
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <script src="main.js"></script>
+  <style>
+    .download-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+    }
+
+    .download-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .download-card h3 i {
+      font-size: 1.2em;
+    }
+
+    .download-button i {
+      font-size: 1.1em;
+    }
+  </style>
 </body>
 
 </html>
