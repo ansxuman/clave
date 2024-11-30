@@ -123,3 +123,17 @@ func (a *App) AddManualProfile(issuer string, secret string) error {
 	}
 	return a.totpService.AddManualProfile(issuer, secret)
 }
+
+func (a *App) BackupProfiles() error {
+	if a.totpService == nil {
+		return fmt.Errorf("TOTP service not initialized")
+	}
+	return a.totpService.BackupProfiles()
+}
+
+func (a *App) RestoreProfiles() error {
+	if a.totpService == nil {
+		return fmt.Errorf("TOTP service not initialized")
+	}
+	return a.totpService.RestoreProfiles()
+}

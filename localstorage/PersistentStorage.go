@@ -215,3 +215,11 @@ func (ps *PersistentStore) HasKey(key string) bool {
 	})
 	return err == nil
 }
+
+func (ps *PersistentStore) Encrypt(data []byte) ([]byte, error) {
+	return ps.encrypt(data)
+}
+
+func (ps *PersistentStore) Decrypt(data []byte) ([]byte, error) {
+	return ps.decrypt(data)
+}

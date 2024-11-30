@@ -24,6 +24,14 @@ export function AddManualProfile(issuer, secret) {
 }
 
 /**
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function BackupProfiles() {
+    let $resultPromise = /** @type {any} */($Call.ByID(2929148704));
+    return $resultPromise;
+}
+
+/**
  * @returns {Promise<string> & { cancel(): void }}
  */
 export function GetAppVersion() {
@@ -89,6 +97,14 @@ export function OpenQR() {
  */
 export function RemoveTotpProfile(profileId) {
     let $resultPromise = /** @type {any} */($Call.ByID(4287256182, profileId));
+    return $resultPromise;
+}
+
+/**
+ * @returns {Promise<void> & { cancel(): void }}
+ */
+export function RestoreProfiles() {
+    let $resultPromise = /** @type {any} */($Call.ByID(1862854628));
     return $resultPromise;
 }
 

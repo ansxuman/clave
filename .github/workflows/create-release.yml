@@ -109,7 +109,7 @@ jobs:
           cd ../github
           git clone https://github.com/ansxuman/wails.git
           cd wails
-          git checkout v3-alpha
+          git checkout start_on_login
           cd v3/cmd/wails3
           go install
           cd ../../../..

@@ -2,7 +2,9 @@ package totp
 
 import (
 	"bytes"
+	"clave/localstorage"
 	"clave/objects"
+	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -12,6 +14,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/liyue201/goqr"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -28,6 +31,9 @@ type Storage interface {
 	AddTotpSecretObject(issuer, secret string) error
 	GetListOfTotpSecretObjects() objects.TotpSecretObjectList
 	DeleteTotpSecretObject(profileId string) error
+	SetValue(key string, value interface{}) error
+	Get(key string, value interface{}) error
+	DeleteKey(key string) error
 }
 
 type WindowManager interface {
@@ -207,5 +213,170 @@ func (s *Service) AddManualProfile(issuer string, secret string) error {
 	}
 
 	s.window.EmitEvent("refreshTOTPProfiles", nil)
+	return nil
+}
+
+func (s *Service) BackupProfiles() error {
+	log.Printf("[TOTP] Starting backup process")
+
+	existingProfiles := s.storage.GetListOfTotpSecretObjects()
+	if len(existingProfiles) == 0 {
+		log.Printf("[TOTP] No profiles found to backup")
+		s.window.EmitEvent("backupError", []string{"No profiles available to backup"})
+		return fmt.Errorf("no profiles to backup")
+	}
+
+	dialog := application.SaveFileDialog().
+		SetMessage("Save backup file").
+		SetButtonText("Save Backup").
+		AddFilter("Backup Files", "*.clave").
+		SetFilename(fmt.Sprintf("clave-backup-%s.clave", time.Now().Format("2006-01-02-15-04-05")))
+
+	log.Printf("[TOTP] Showing save dialog")
+	result, err := dialog.PromptForSingleSelection()
+	if err != nil {
+		log.Printf("[TOTP] Backup dialog error: %v", err)
+		s.window.EmitEvent("backupError", []string{"Failed to open save dialog"})
+		return err
+	}
+
+	if result == "" {
+		log.Printf("[TOTP] User cancelled backup")
+		return nil
+	}
+	log.Printf("[TOTP] Selected backup path: %s", result)
+
+	backupData := struct {
+		Profiles []objects.TotpSecretObject `json:"profiles"`
+		Version  string                     `json:"version"`
+		Date     string                     `json:"date"`
+	}{
+		Profiles: existingProfiles,
+		Version:  "1.0",
+		Date:     time.Now().Format(time.RFC3339),
+	}
+
+	jsonData, err := json.MarshalIndent(backupData, "", "  ")
+	if err != nil {
+		log.Printf("[TOTP] Failed to marshal backup data: %v", err)
+		s.window.EmitEvent("backupError", []string{"Failed to prepare backup data"})
+		return err
+	}
+
+	encrypted, err := s.storage.(*localstorage.PersistentStore).Encrypt(jsonData)
+	if err != nil {
+		log.Printf("[TOTP] Failed to encrypt backup data: %v", err)
+		s.window.EmitEvent("backupError", []string{"Failed to encrypt backup data"})
+		return err
+	}
+
+	err = os.WriteFile(result, encrypted, 0644)
+	if err != nil {
+		log.Printf("[TOTP] Failed to write backup file: %v", err)
+		s.window.EmitEvent("backupError", []string{"Failed to save backup file"})
+		return err
+	}
+
+	log.Printf("[TOTP] Backup completed successfully")
+	s.window.EmitEvent("backupSuccess", []string{fmt.Sprintf("Successfully backed up %d profiles", len(existingProfiles))})
+	return nil
+}
+
+func (s *Service) RestoreProfiles() error {
+	log.Printf("[TOTP] Starting restore process")
+
+	dialog := application.OpenFileDialog().
+		SetTitle("Select Backup File").
+		AddFilter("Backup Files", "*.clave")
+
+	log.Printf("[TOTP] Showing open dialog")
+	result, err := dialog.PromptForSingleSelection()
+	if err != nil {
+		log.Printf("[TOTP] Restore dialog error: %v", err)
+		s.window.EmitEvent("restoreError", []string{"Failed to open file dialog"})
+		return err
+	}
+
+	if result == "" {
+		log.Printf("[TOTP] User cancelled restore")
+		return nil
+	}
+	log.Printf("[TOTP] Selected restore file: %s", result)
+
+	encryptedData, err := os.ReadFile(result)
+	if err != nil {
+		log.Printf("[TOTP] Failed to read backup file: %v", err)
+		s.window.EmitEvent("restoreError", []string{"Failed to read backup file"})
+		return err
+	}
+
+	decrypted, err := s.storage.(*localstorage.PersistentStore).Decrypt(encryptedData)
+	if err != nil {
+		log.Printf("[TOTP] Failed to decrypt backup file: %v", err)
+		s.window.EmitEvent("restoreError", []string{"Failed to decrypt backup file"})
+		return err
+	}
+
+	var backupData struct {
+		Profiles []objects.TotpSecretObject `json:"profiles"`
+		Version  string                     `json:"version"`
+		Date     string                     `json:"date"`
+	}
+
+	if err := json.Unmarshal(decrypted, &backupData); err != nil {
+		log.Printf("[TOTP] Failed to parse backup data: %v", err)
+		s.window.EmitEvent("restoreError", []string{"Invalid backup file format"})
+		return err
+	}
+
+	if len(backupData.Profiles) == 0 {
+		log.Printf("[TOTP] No profiles found in backup file")
+		s.window.EmitEvent("restoreError", []string{"No profiles found in backup"})
+		return fmt.Errorf("no profiles in backup")
+	}
+
+	log.Printf("[TOTP] Found %d profiles in backup (Version: %s, Date: %s)",
+		len(backupData.Profiles), backupData.Version, backupData.Date)
+
+	existingProfiles := s.storage.GetListOfTotpSecretObjects()
+	existingMap := make(map[string]bool)
+	for _, p := range existingProfiles {
+		existingMap[p.Secret] = true
+	}
+
+	var stats struct {
+		added     int
+		skipped   int
+		duplicate int
+	}
+
+	for _, profile := range backupData.Profiles {
+		if _, exists := existingMap[profile.Secret]; exists {
+			log.Printf("[TOTP] Skipping duplicate profile: %s", profile.Issuer)
+			stats.duplicate++
+			continue
+		}
+
+		err := s.storage.AddTotpSecretObject(profile.Issuer, profile.Secret)
+		if err != nil {
+			log.Printf("[TOTP] Failed to add profile %s: %v", profile.Issuer, err)
+			stats.skipped++
+		} else {
+			log.Printf("[TOTP] Added new profile: %s", profile.Issuer)
+			stats.added++
+		}
+	}
+
+	statusMsg := fmt.Sprintf("Restore completed: %d added", stats.added)
+	if stats.duplicate > 0 {
+		statusMsg += fmt.Sprintf(", %d already existed", stats.duplicate)
+	}
+	if stats.skipped > 0 {
+		statusMsg += fmt.Sprintf(", %d failed", stats.skipped)
+	}
+
+	log.Printf("[TOTP] %s", statusMsg)
+	s.window.EmitEvent("restoreSuccess", []string{statusMsg})
+	s.SendTOTPData()
 	return nil
 }

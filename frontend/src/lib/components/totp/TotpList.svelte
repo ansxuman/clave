@@ -3,9 +3,10 @@
     import { fade, slide } from 'svelte/transition';
     import { MoreVertical, Plus, Clipboard, Trash2   , QrCode,
         FileUp,
-        KeyRound} from 'lucide-svelte';
+        KeyRound,
+        FileDown} from 'lucide-svelte';
     import * as wails from '@wailsio/runtime';
-    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile, AddManualProfile, GetAppVersion } from '../../../../bindings/clave/backend/app';
+    import { IsFirstMount, OpenQR, SendTOTPData, RemoveTotpProfile, AddManualProfile, GetAppVersion, BackupProfiles, RestoreProfiles } from '../../../../bindings/clave/backend/app';
     import type { TOTPProfile, MenuOption, TOTPEvent } from '../../types/totp';
     import { generateTOTP } from '../../utils/totp';
     import About from '../about/About.svelte';
@@ -56,6 +57,34 @@
             action: () => {
                 showManualEntryModal = true;
                 showAddMenu = false;
+            }
+        },
+        { 
+            label: 'Backup Profiles', 
+            icon: FileUp,
+            action: async () => {
+                console.log("Starting backup process...");
+                try {
+                    await BackupProfiles();
+                    showAddMenu = false;
+                } catch (err) {
+                    console.error("Backup error:", err);
+                    showToast("Failed to start backup process");
+                }
+            }
+        },
+        { 
+            label: 'Restore Profiles', 
+            icon: FileDown,
+            action: async () => {
+                console.log("Starting restore process...");
+                try {
+                    await RestoreProfiles();
+                    showAddMenu = false;
+                } catch (err) {
+                    console.error("Restore error:", err);
+                    showToast("Failed to start restore process");
+                }
             }
         }
     ];
@@ -135,6 +164,34 @@
 
         wails.Events.On("duplicateProfile",  (event: { data: string[] }) => { 
             showToast(event.data[0] || "Profile already exists")
+        });
+
+        wails.Events.On("backupError", (event: { data: string[] }) => {
+            const message = event.data[0] || "Failed to create backup";
+            console.error("Backup error:", message);
+            showToast(message);
+            showAddMenu = false;
+        });
+
+        wails.Events.On("backupSuccess", (event: { data: string[] }) => {
+            const message = event.data[0] || "Backup completed successfully";
+            console.log("Backup success:", message);
+            showToast(message);
+            showAddMenu = false;
+        });
+
+        wails.Events.On("restoreError", (event: { data: string[] }) => {
+            const message = event.data[0] || "Failed to restore backup";
+            console.error("Restore error:", message);
+            showToast(message);
+            showAddMenu = false;
+        });
+
+        wails.Events.On("restoreSuccess", (event: { data: string[] }) => {
+            const message = event.data[0] || "Restore completed successfully";
+            console.log("Restore success:", message);
+            showToast(message);
+            showAddMenu = false;
         });
     }
 

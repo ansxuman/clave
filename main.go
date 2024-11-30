@@ -7,7 +7,6 @@ import (
 	"embed"
 	_ "embed"
 	"log"
-	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -73,9 +72,9 @@ func main() {
 
 	app.Hide()
 
-	if runtime.GOOS == "darwin" {
-		systemTray.SetTemplateIcon(a.Icon)
-	}
+	// if runtime.GOOS == "darwin" {
+	systemTray.SetTemplateIcon(a.Icon)
+	// }
 
 	myMenu := app.NewMenu()
 	myMenu.Add("Clave").SetEnabled(false)
