@@ -65,6 +65,8 @@ func (s *Service) OpenQR() error {
 	if err != nil {
 		s.winManager.EndProfileAddition()
 		log.Printf("[TOTP] Failed to open QR image: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventQRScanError, []string{"Unable to open image selector"})
 		return err
 	}
 
@@ -82,21 +84,31 @@ func (s *Service) scanQRCode(path string) error {
 	imgdata, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("[TOTP] Failed to read image: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventQRScanError, []string{"Unable to read the selected image"})
 		return err
 	}
 
 	img, _, err := image.Decode(bytes.NewReader(imgdata))
 	if err != nil {
 		log.Printf("[TOTP] Failed to decode image: %v", err)
-		s.window.EmitEvent("failedToScanQR", nil)
+		s.window.Show()
+		s.window.EmitEvent(EventQRScanError, []string{"The selected file is not a valid image"})
 		return err
 	}
 
 	qrCodes, err := goqr.Recognize(img)
 	if err != nil {
 		log.Printf("[TOTP] Failed to recognize QR: %v", err)
-		s.window.EmitEvent("failedToScanQR", nil)
+		s.window.Show()
+		s.window.EmitEvent(EventQRScanError, []string{"No QR code found in the image"})
 		return err
+	}
+
+	if len(qrCodes) == 0 {
+		s.window.Show()
+		s.window.EmitEvent(EventQRScanError, []string{"No valid QR code found in the image"})
+		return fmt.Errorf("no QR codes found")
 	}
 
 	for _, qrCode := range qrCodes {
@@ -112,6 +124,11 @@ const (
 	EventFailedToAddProfile = "failedToAddProfile"
 	EventRefreshProfiles    = "refreshProfiles"
 	EventDuplicateProfile   = "duplicateProfile"
+	EventBackupError        = "backupError"
+	EventBackupSuccess      = "backupSuccess"
+	EventRestoreError       = "restoreError"
+	EventRestoreSuccess     = "restoreSuccess"
+	EventQRScanError        = "qrScanError"
 )
 
 func (s *Service) configureQRProfile(qrData []uint8) error {
@@ -125,7 +142,7 @@ func (s *Service) configureQRProfile(qrData []uint8) error {
 
 	if parsedURL.Scheme != "otpauth" || parsedURL.Host != "totp" {
 		s.window.Show()
-		s.window.EmitEvent(EventFailedToAddProfile, "Invalid TOTP URI format")
+		s.window.EmitEvent(EventFailedToAddProfile, "Invalid QR code")
 		return fmt.Errorf("invalid URI format")
 	}
 
@@ -218,11 +235,14 @@ func (s *Service) AddManualProfile(issuer string, secret string) error {
 
 func (s *Service) BackupProfiles() error {
 	log.Printf("[TOTP] Starting backup process")
+	s.winManager.StartProfileAddition()
 
 	existingProfiles := s.storage.GetListOfTotpSecretObjects()
 	if len(existingProfiles) == 0 {
 		log.Printf("[TOTP] No profiles found to backup")
-		s.window.EmitEvent("backupError", []string{"No profiles available to backup"})
+		s.window.Show()
+		s.window.EmitEvent(EventBackupError, []string{"You don't have any profiles to backup yet"})
+		s.winManager.EndProfileAddition()
 		return fmt.Errorf("no profiles to backup")
 	}
 
@@ -232,19 +252,20 @@ func (s *Service) BackupProfiles() error {
 		AddFilter("Backup Files", "*.clave").
 		SetFilename(fmt.Sprintf("clave-backup-%s.clave", time.Now().Format("2006-01-02-15-04-05")))
 
-	log.Printf("[TOTP] Showing save dialog")
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		log.Printf("[TOTP] Backup dialog error: %v", err)
-		s.window.EmitEvent("backupError", []string{"Failed to open save dialog"})
+		s.window.Show()
+		s.window.EmitEvent(EventBackupError, []string{"Unable to open save dialog"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	if result == "" {
 		log.Printf("[TOTP] User cancelled backup")
+		s.winManager.EndProfileAddition()
 		return nil
 	}
-	log.Printf("[TOTP] Selected backup path: %s", result)
 
 	backupData := struct {
 		Profiles []objects.TotpSecretObject `json:"profiles"`
@@ -258,62 +279,75 @@ func (s *Service) BackupProfiles() error {
 
 	jsonData, err := json.MarshalIndent(backupData, "", "  ")
 	if err != nil {
-		log.Printf("[TOTP] Failed to marshal backup data: %v", err)
-		s.window.EmitEvent("backupError", []string{"Failed to prepare backup data"})
+		log.Printf("[TOTP] Failed to prepare backup data: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventBackupError, []string{"Unable to prepare backup data"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	encrypted, err := s.storage.(*localstorage.PersistentStore).Encrypt(jsonData)
 	if err != nil {
-		log.Printf("[TOTP] Failed to encrypt backup data: %v", err)
-		s.window.EmitEvent("backupError", []string{"Failed to encrypt backup data"})
+		log.Printf("[TOTP] Failed to encrypt backup: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventBackupError, []string{"Unable to secure backup data"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	err = os.WriteFile(result, encrypted, 0644)
 	if err != nil {
 		log.Printf("[TOTP] Failed to write backup file: %v", err)
-		s.window.EmitEvent("backupError", []string{"Failed to save backup file"})
+		s.window.Show()
+		s.window.EmitEvent(EventBackupError, []string{"Unable to save backup file"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
-	log.Printf("[TOTP] Backup completed successfully")
-	s.window.EmitEvent("backupSuccess", []string{fmt.Sprintf("Successfully backed up %d profiles", len(existingProfiles))})
+	s.window.Show()
+	s.window.EmitEvent(EventBackupSuccess, []string{fmt.Sprintf("Successfully backed up %d profiles", len(existingProfiles))})
+	s.winManager.EndProfileAddition()
 	return nil
 }
 
 func (s *Service) RestoreProfiles() error {
 	log.Printf("[TOTP] Starting restore process")
+	s.winManager.StartProfileAddition()
 
 	dialog := application.OpenFileDialog().
 		SetTitle("Select Backup File").
 		AddFilter("Backup Files", "*.clave")
 
-	log.Printf("[TOTP] Showing open dialog")
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		log.Printf("[TOTP] Restore dialog error: %v", err)
-		s.window.EmitEvent("restoreError", []string{"Failed to open file dialog"})
+		s.window.Show()
+		s.window.EmitEvent(EventRestoreError, []string{"Unable to open file selector"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	if result == "" {
 		log.Printf("[TOTP] User cancelled restore")
+		s.winManager.EndProfileAddition()
 		return nil
 	}
-	log.Printf("[TOTP] Selected restore file: %s", result)
 
 	encryptedData, err := os.ReadFile(result)
 	if err != nil {
 		log.Printf("[TOTP] Failed to read backup file: %v", err)
-		s.window.EmitEvent("restoreError", []string{"Failed to read backup file"})
+		s.window.Show()
+		s.window.EmitEvent(EventRestoreError, []string{"Unable to read the backup file"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	decrypted, err := s.storage.(*localstorage.PersistentStore).Decrypt(encryptedData)
 	if err != nil {
-		log.Printf("[TOTP] Failed to decrypt backup file: %v", err)
-		s.window.EmitEvent("restoreError", []string{"Failed to decrypt backup file"})
+		log.Printf("[TOTP] Failed to decrypt backup: %v", err)
+		s.window.Show()
+		s.window.EmitEvent(EventRestoreError, []string{"Invalid or corrupted backup file"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
@@ -325,18 +359,19 @@ func (s *Service) RestoreProfiles() error {
 
 	if err := json.Unmarshal(decrypted, &backupData); err != nil {
 		log.Printf("[TOTP] Failed to parse backup data: %v", err)
-		s.window.EmitEvent("restoreError", []string{"Invalid backup file format"})
+		s.window.Show()
+		s.window.EmitEvent(EventRestoreError, []string{"The backup file appears to be damaged"})
+		s.winManager.EndProfileAddition()
 		return err
 	}
 
 	if len(backupData.Profiles) == 0 {
-		log.Printf("[TOTP] No profiles found in backup file")
-		s.window.EmitEvent("restoreError", []string{"No profiles found in backup"})
-		return fmt.Errorf("no profiles in backup")
+		log.Printf("[TOTP] Empty backup file")
+		s.window.Show()
+		s.window.EmitEvent(EventRestoreError, []string{"No profiles found in the backup file"})
+		s.winManager.EndProfileAddition()
+		return fmt.Errorf("empty backup")
 	}
-
-	log.Printf("[TOTP] Found %d profiles in backup (Version: %s, Date: %s)",
-		len(backupData.Profiles), backupData.Version, backupData.Date)
 
 	existingProfiles := s.storage.GetListOfTotpSecretObjects()
 	existingMap := make(map[string]bool)
@@ -346,8 +381,8 @@ func (s *Service) RestoreProfiles() error {
 
 	var stats struct {
 		added     int
-		skipped   int
 		duplicate int
+		failed    int
 	}
 
 	for _, profile := range backupData.Profiles {
@@ -359,24 +394,34 @@ func (s *Service) RestoreProfiles() error {
 
 		err := s.storage.AddTotpSecretObject(profile.Issuer, profile.Secret)
 		if err != nil {
-			log.Printf("[TOTP] Failed to add profile %s: %v", profile.Issuer, err)
-			stats.skipped++
+			log.Printf("[TOTP] Failed to restore profile %s: %v", profile.Issuer, err)
+			stats.failed++
 		} else {
-			log.Printf("[TOTP] Added new profile: %s", profile.Issuer)
+			log.Printf("[TOTP] Added profile: %s", profile.Issuer)
 			stats.added++
 		}
 	}
 
-	statusMsg := fmt.Sprintf("Restore completed: %d added", stats.added)
-	if stats.duplicate > 0 {
-		statusMsg += fmt.Sprintf(", %d already existed", stats.duplicate)
+	// Prepare user-friendly status message
+	var statusParts []string
+	if stats.added > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d new profiles added", stats.added))
 	}
-	if stats.skipped > 0 {
-		statusMsg += fmt.Sprintf(", %d failed", stats.skipped)
+	if stats.duplicate > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d profiles already existed", stats.duplicate))
+	}
+	if stats.failed > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d profiles couldn't be added", stats.failed))
 	}
 
-	log.Printf("[TOTP] %s", statusMsg)
-	s.window.EmitEvent("restoreSuccess", []string{statusMsg})
+	statusMsg := strings.Join(statusParts, ", ")
+	if stats.added == 0 && stats.duplicate > 0 {
+		statusMsg = "All profiles from the backup already exist"
+	}
+
+	s.window.Show()
+	s.window.EmitEvent(EventRestoreSuccess, []string{statusMsg})
 	s.SendTOTPData()
+	s.winManager.EndProfileAddition()
 	return nil
 }

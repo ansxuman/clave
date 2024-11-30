@@ -31,7 +31,6 @@
     const w = wails.Window;
 
     const menuItems: MenuOption[] = [
-        { label: 'Settings', action: () => console.log('Settings clicked') },
         { 
             label: 'About', 
             action: () => {
@@ -151,6 +150,7 @@
     }
     function InitEventListeners() {
         wails.Events.On("totpData", handleTOTPData);
+        
         wails.Events.On("refreshProfiles", async () => {
             showToast("Profiles added successfully");
             await SendTOTPData();
@@ -162,8 +162,12 @@
             showManualEntryModal = false;
         });
 
-        wails.Events.On("duplicateProfile",  (event: { data: string[] }) => { 
-            showToast(event.data[0] || "Profile already exists")
+        wails.Events.On("duplicateProfile", (event: { data: string[] }) => { 
+            showToast(event.data[0] || "Profile already exists");
+        });
+
+        wails.Events.On("qrScanError", (event: { data: string[] }) => {
+            showToast(event.data[0] || "Failed to scan QR code");
         });
 
         wails.Events.On("backupError", (event: { data: string[] }) => {
