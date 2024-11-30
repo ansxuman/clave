@@ -28,6 +28,8 @@ prefersDark.addEventListener('change', (e) => {
   }
 });
 
+let currentVersion = '';
+
 async function updateVersion() {
   try {
     const response = await fetch('https://api.github.com/repos/ansxuman/clave/releases/latest');
@@ -39,9 +41,9 @@ async function updateVersion() {
       throw new Error('Invalid release data');
     }
     
-    const versionNumber = data.tag_name.replace(/^v/, '');
-    if (versionNumber) {
-      updateDownloadLinks(versionNumber);
+    currentVersion = data.tag_name.replace(/^v/, '');
+    if (currentVersion) {
+      updateDownloadLinks(currentVersion);
     }
   } catch (error) {
     console.error('Failed to fetch version:', error);
@@ -70,13 +72,13 @@ document.querySelectorAll('.download-button').forEach(button => {
       gtag('event', 'download', {
         'event_category': 'App',
         'event_label': button.getAttribute('data-platform'),
-        'value': versionNumber
+        'value': currentVersion
       });
     }
   });
 });
 
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
     const target = document.querySelector(this.getAttribute('href'));
