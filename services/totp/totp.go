@@ -402,7 +402,6 @@ func (s *Service) RestoreProfiles() error {
 		}
 	}
 
-	// Prepare user-friendly status message
 	var statusParts []string
 	if stats.added > 0 {
 		statusParts = append(statusParts, fmt.Sprintf("%d new profiles added", stats.added))
