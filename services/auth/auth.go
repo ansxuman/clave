@@ -34,8 +34,8 @@ func (s *Service) HasPin() bool {
 }
 
 func (s *Service) SetupPin(pin string) error {
-	if len(pin) < 4 {
-		return errors.New("PIN must be at least 4 characters")
+	if len(pin) < 6 {
+		return errors.New("PIN must be at least 6 characters")
 	}
 	if s.HasPin() {
 		return errors.New("PIN is already set")
