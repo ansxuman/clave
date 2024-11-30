@@ -412,7 +412,7 @@ func (s *Service) RestoreProfiles() error {
 		statusParts = append(statusParts, fmt.Sprintf("%d new profiles added", stats.added))
 	}
 	if stats.duplicate > 0 {
-		statusParts = append(statusParts, fmt.Sprintf("%d profiles already existed", stats.duplicate))
+		statusParts = append(statusParts, fmt.Sprintf("%d profiles already exist", stats.duplicate))
 	}
 	if stats.failed > 0 {
 		statusParts = append(statusParts, fmt.Sprintf("%d profiles couldn't be added", stats.failed))
