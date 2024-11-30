@@ -99,13 +99,15 @@
 </script>
 
 {#if isInitializing}
-    <div class="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+    <div class="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
         <LoadingSpinner />
     </div>
 {:else if setupComplete}
-    <TotpList />
+    <div class="bg-gradient-to-b from-gray-900 to-gray-800">
+        <TotpList />
+    </div>
 {:else if needsVerification}
-    <div class="flex flex-col items-center justify-between h-screen text-white p-4">
+    <div class="flex flex-col items-center justify-between h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4">
         <div class="w-full flex-grow flex items-center justify-center">
             <PinSetup 
                 mode="verify"
@@ -115,7 +117,7 @@
         <Footer {version} />
     </div>
 {:else}
-    <div class="flex flex-col items-center justify-between h-screen text-white p-4">
+    <div class="flex flex-col items-center justify-between h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4">
         <div class="w-full max-w-sm text-center" in:fade={{ duration: 300 }}>
             <h1 class="text-4xl font-bold mb-2">
                 <span class="animate-gradient bg-clip-text text-transparent bg-[length:200%_100%] bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400">

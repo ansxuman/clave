@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -53,13 +54,15 @@ func (s *Service) SetWindow(window *application.WebviewWindow) {
 		s.window = window
 	}
 }
-
 func (s *Service) OpenQR() error {
 	s.winManager.StartProfileAddition()
 
 	dialog := application.OpenFileDialog().
-		SetTitle("Select QR Code Image").
-		AddFilter("Image Files", "*.png;*.jpg;*.jpeg")
+		SetTitle("Select QR Code Image")
+
+	if runtime.GOOS != "linux" {
+		dialog = dialog.AddFilter("Image Files", "*.png;*.jpg;*.jpeg")
+	}
 
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
@@ -315,8 +318,10 @@ func (s *Service) RestoreProfiles() error {
 	s.winManager.StartProfileAddition()
 
 	dialog := application.OpenFileDialog().
-		SetTitle("Select Backup File").
-		AddFilter("Backup Files", "*.clave")
+		SetTitle("Select Backup File")
+	if runtime.GOOS != "linux" {
+		dialog = dialog.AddFilter("Backup Files", "*.clave")
+	}
 
 	result, err := dialog.PromptForSingleSelection()
 	if err != nil {

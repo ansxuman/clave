@@ -7,6 +7,7 @@ import (
 	"embed"
 	_ "embed"
 	"log"
+	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -32,6 +33,7 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
+		StartAtLogin: true,
 		Mac: application.MacOptions{
 			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
@@ -72,9 +74,14 @@ func main() {
 
 	app.Hide()
 
-	// if runtime.GOOS == "darwin" {
 	systemTray.SetTemplateIcon(a.Icon)
-	// }
+	if runtime.GOOS != "windows" {
+		systemTray.SetDarkModeIcon(a.Icon)
+		systemTray.SetIcon(a.DarkIcon)
+	} else {
+		systemTray.SetIcon(a.Icon)
+		systemTray.SetDarkModeIcon(a.DarkIcon)
+	}
 
 	myMenu := app.NewMenu()
 	myMenu.Add("Clave").SetEnabled(false)

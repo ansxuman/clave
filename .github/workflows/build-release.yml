@@ -266,6 +266,7 @@ jobs:
           Architecture: amd64
           Maintainer: Clave <ansxuman@gmail.com>
           Description: A lightweight cross-platform desktop authenticator app.
+          Depends: libwebkit2gtk-4.1-0, libwebkit2gtk-4.1-dev
           EOF
 
           mkdir -p clave_${VERSION}_amd64/usr/{bin,share}

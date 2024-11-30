@@ -50,16 +50,21 @@ jobs:
           go install
           cd ../../../..
 
-      - name: Update go.mod (Unix)
-        if: runner.os != 'Windows'
+      - name: Update go.mod on darwin
+        if: runner.os == 'macOS'
         run: |
-          sed -i'' -e 's|../wails/v3|../github/wails/v3|g' go.mod
+          sed -i '' 's|=> ../wails/v3|=> ../github/wails/v3|g' go.mod
+
+      - name: Update go.mod on linux
+        if: runner.os == 'Linux'
+        run: |
+          sed -i 's|=> ../wails/v3|=> ../github/wails/v3|g' go.mod
 
       - name: Update go.mod (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          (Get-Content go.mod) -replace '../wails/v3', '../github/wails/v3' | Set-Content go.mod
+          (Get-Content go.mod) -replace 'replace.*=> ../wails/v3', 'replace github.com/wailsapp/wails/v3 => ../github/wails/v3' | Set-Content go.mod
 
       - name: Build Project
         run: wails3 build
