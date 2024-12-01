@@ -66,6 +66,25 @@ function updateDownloadLinks(versionNumber) {
   });
 }
 
+// async function fetchDownloadStats() {
+//   try {
+//     const releasesResponse = await fetch('https://api.github.com/repos/ansxuman/clave/releases');
+//     const releases = await releasesResponse.json();
+//     const githubDownloads = releases.reduce((total, release) => {
+//       const releaseDownloads = release.assets.reduce((sum, asset) =>
+//         sum + asset.download_count, 0);
+//       return total + releaseDownloads;
+//     }, 0);
+
+//     const totalDownloads = githubDownloads;
+//     document.getElementById('download-count').textContent = new Intl.NumberFormat().format(totalDownloads);
+//   } catch (error) {
+//     console.error('Failed to fetch download stats:', error);
+//     document.getElementById('download-count').textContent = 'N/A';
+//   }
+// }
+
+
 document.querySelectorAll('.download-button').forEach(button => {
   button.addEventListener('click', (e) => {
     if (typeof gtag === 'function') {
@@ -97,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   updateVersion();
+  // fetchDownloadStats();
 });
 
 const smoothScroll = (target) => {
