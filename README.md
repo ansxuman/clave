@@ -1,5 +1,5 @@
 <div align="center">
- <img src="https://github.com/ansxuman/clave/blob/main/build/appicon.png" alt="Clave Logo" width="120" />
+ <img src="https://raw.githubusercontent.com/ansxuman/clave/refs/heads/main/build/appicon.png" alt="Clave Logo" width="120" />
   <h1>Clave</h1>
   <p>A SIMPLE, SECURE, and FREE lightweight cross-platform desktop authenticator app packed with powerful features.</p>
 
