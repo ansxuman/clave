@@ -11,7 +11,8 @@
 [![Notarized by Apple](https://img.shields.io/badge/Release_Notarized_by_Apple-000000?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 
 
-![clave](https://github.com/user-attachments/assets/a6a8aad6-aecc-49c6-aff6-220f2c13537d)
+![Clave](https://github.com/user-attachments/assets/ac80de84-77a3-48af-ab15-e91afb8a7664)
+
 
 </div>
 
