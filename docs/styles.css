@@ -131,7 +131,6 @@ nav {
   border-radius: 24px;
   border: 1px solid var(--border);
   z-index: 2;
-  height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: center;
