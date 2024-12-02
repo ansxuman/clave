@@ -35,7 +35,55 @@
 - **Import & Export**:  
   Easily backup and restore your profiles.
 
----
+## Development
+
+### Prerequisites
+- **NPM**
+- **Go**
+- **Task**
+
+### Install Wails
+
+1. Clone the Wails repository:
+   ```bash
+   git clone https://github.com/ansxuman/wails.git
+   ```
+2. Navigate to the Wails directory:
+   ```bash
+   cd wails
+   ```
+3. Check out the `start_on_login` branch:
+    ```bash
+    git checkout start_on_login
+    ```
+4. Go to the wails3 directory:
+    ```bash
+    cd v3/cmd/wails3
+    ```
+5. Install Wails:
+    ```bash
+    go install
+    ```
+    
+### Set Up Clave
+
+1. Clone the Clave repository:
+   ```bash
+   https://github.com/ansxuman/clave.git
+   ```
+2. Navigate to the Clave directory:
+   ```bash
+   cd clave
+   ```
+3. Update the `go.mod` file in the Clave project to replace the Wails path with the local path of your cloned Wails repository.
+4. Run the App in Dev Mode
+   ```bash
+   task dev
+   ```
+
+## Contributing
+
+Contributions are what make the open-source community an incredible space for learning, inspiration, and creativity. Any contribution you make is deeply appreciated.Please see our [contributing guidelines](./.github/CONTRIBUTING.md) for more information.
 
 ## **Donations**
 
