@@ -10,6 +10,7 @@
 [![Build Release](https://github.com/ansxuman/clave/actions/workflows/build-release.yml/badge.svg)](https://github.com/ansxuman/clave/actions/workflows/build-release.yml)
 [![Notarized by Apple](https://img.shields.io/badge/Release_Notarized_by_Apple-000000?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 
+<a href="https://www.producthunt.com/posts/clave-3?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-clave&#0045;3" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=669391&theme=light" alt="Clave - Simple&#0044;&#0032;secure&#0032;authentication | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ![Clave](https://github.com/user-attachments/assets/ac80de84-77a3-48af-ab15-e91afb8a7664)
 
